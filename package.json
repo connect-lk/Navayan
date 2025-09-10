@@ -1,25 +1,27 @@
 {
-    "name": "navayan",
-    "version": "0.1.0",
-    "private": true,
-    "scripts": {
-        "dev": "next dev --turbopack -p 4600",
-        "build": "next build --turbopack",
-        "start": "next start -p 4600",
-        "lint": "eslint"
-    },
-    "dependencies": {
-        "next": "15.5.2",
-        "react": "19.1.0",
-        "react-dom": "19.1.0",
-        "react-icon": "^1.0.0",
-        "react-icons": "^5.5.0"
-    },
-    "devDependencies": {
-        "@eslint/eslintrc": "^3",
-        "@tailwindcss/postcss": "^4",
-        "eslint": "^9",
-        "eslint-config-next": "15.5.2",
-        "tailwindcss": "^4"
-    }
+  "name": "navayan",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack -p 4600",
+    "build": "next build --turbopack",
+    "start": "next start -p 4600",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "formik": "^2.4.6",
+    "next": "15.5.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-icon": "^1.0.0",
+    "react-icons": "^5.5.0",
+    "yup": "^1.7.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.2",
+    "tailwindcss": "^4"
+  }
 }

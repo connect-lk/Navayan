@@ -2,15 +2,7 @@ import { NewBookingCard } from "@/components/comman/NewBookingCard";
 import { IoSearchOutline } from "react-icons/io5";
 import React from "react";
 import InventoryTable from "@/components/comman/InventoryTable";
-const projects = [
-  {
-    projectName: "Navayan's Capital Park",
-    total: 150,
-    available: 35,
-    onHold: 20,
-    booked: 10,
-  },
-];
+import { bookingProjects } from "../data";
 const page = () => {
   return (
     <div className="max-w-screen-2xl mx-auto pb-16 px-6 md:px-8 lg:px-12 2xl:px-0">
@@ -19,14 +11,14 @@ const page = () => {
           NEW BOOKING
         </h2>
         <div className=" grid grid-cols-1 w-full  items-center md:items-stretch justify-center xl:gap-8 gap-4">
-          {projects.map((project, index) => (
+          {bookingProjects?.map((project, index) => (
             <NewBookingCard
               key={index}
-              projectName={project.projectName}
-              total={project.total}
-              available={project.available}
-              onHold={project.onHold}
-              booked={project.booked}
+              projectName={project?.projectName}
+              total={project?.total}
+              available={project?.available}
+              onHold={project?.onHold}
+              booked={project?.booked}  
             />
           ))}
         </div>
@@ -34,7 +26,7 @@ const page = () => {
 
       <div className="w-full py-6">
         <div className="flex flex-col sm:flex-row items-center justify-between ">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-0">
+          <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 mb-4 sm:mb-0">
             Inventory
           </h1>
 
@@ -50,7 +42,7 @@ const page = () => {
           </div>
         </div>
       </div>
-      <InventoryTable/>
+      <InventoryTable />
     </div>
   );
 };

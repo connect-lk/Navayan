@@ -21,7 +21,7 @@ const Navbar = () => {
         <div className="flex items-center space-x-10">
           <Link
             href="disclaimer"
-            className="text-sky-700 text-lg font-medium leading-tight"
+            className="text-sky-700 text-lg font-medium leading-tight md:block hidden"
           >
             Disclaimer
           </Link>
