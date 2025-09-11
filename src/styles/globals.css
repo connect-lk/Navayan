@@ -1,14 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #ffffff; 
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'Inter',sans-serif;
+  --font-sans: "Inter", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -20,13 +19,29 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Inter',sans-serif;
+  background: var(--background); 
+  font-family: "Inter", sans-serif;
 }
 
+input {
+  color: #000000; /* Sets text color to black */
+}
+
+/* This sets the color for the placeholder text in all input fields. */
+input::placeholder {
+  color: #6b7280; /* Sets placeholder color to a shade of gray */
+}
 
 input[type="date"]::placeholder {
-  color: red; /* Tailwind's gray-400 */
-  opacity: 1; /* Some browsers require this to show the placeholder color */
+  color: #6B7280;
+  opacity: 1; /* Ensure the color shows */
+}
+input[type="number"]::placeholder {
+  color: #6B7280;
+  opacity: 1;
+}
+
+input[type="text"]::placeholder {
+  color: #6B7280;
+  opacity: 1; /* Ensure the color shows */
 }

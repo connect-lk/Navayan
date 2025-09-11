@@ -7,6 +7,8 @@ export const NewBookingCard = ({
   booked,
   total,
   available,
+  url,
+  project_subtitle,
 }) => {
   const stats = [
     {
@@ -41,26 +43,24 @@ export const NewBookingCard = ({
 
   return (
     <div className="bg-white p-4 rounded-2xl flex flex-col md:flex-row items-stretch gap-4 md:gap-8 shadow-lg border border-gray-200 w-full max-w-screen-2xl mx-auto">
-      {/* Image container */}
       <div className="flex-shrink-0 w-full md:w-1/3">
         <Image
-          src="/images/project_card.png"
-            width={1200}
-            height={1200}
-            quality={95}
-          alt={`Image of ${projectName}`}
+          src={url}
+          width={1200}
+          height={1200}
+          quality={95}
+          alt={projectName}
           className="w-full h-[210px] rounded-xl object-cover"
         />
       </div>
 
-      {/* Content container */}
       <div className="flex flex-col justify-between w-full md:w-2/3">
         <div className="">
           <p className="text-sm font-medium text-gray-500 mb-2">
-            Property Details
+            {project_subtitle}
           </p>
           <h3 className="text-xl font-bold text-[#1F2937] mb-4">
-            Navayan's Capital Park
+            {projectName}
           </h3>
         </div>
 

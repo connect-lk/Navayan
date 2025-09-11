@@ -1,10 +1,8 @@
 import React from "react";
 
-import { tableData } from "../../data";
 import { useRouter } from "next/router";
-const InventoryTable = ({ kycTable }) => {
+const InventoryTable = ({ kycTable, tableData }) => {
   const router = useRouter();
-
   return (
     <div
       className={`bg-white rounded-xl  min-h-auto  ${
@@ -77,10 +75,10 @@ const InventoryTable = ({ kycTable }) => {
                     <td className="p-4 text-center ">
                       <button
                         onClick={() => router.push("/kyc")}
-                        className={`font-semibold px-4 py-2 text-[14px] rounded-md cursor-pointer w-fit transition-all duration-300 ${
+                        className={`font-semibold px-4 py-2 text-[14px]   cursor-pointer w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${
                           row?.booked
                             ? "bg-[#D1D5DB] text-[#4B5563] cursor-not-allowed"
-                            : "bg-[#066fa9] text-white"
+                            : " hover:bg-[#055a87] bg-[#066FA9] text-white"
                         }`}
                         disabled={row?.booked}
                       >

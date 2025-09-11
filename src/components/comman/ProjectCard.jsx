@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import React from "react";
 import { GoArrowRight } from "react-icons/go";
+import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 
 export const ProjectCard = ({
   projectName,
@@ -9,6 +10,8 @@ export const ProjectCard = ({
   booked,
   total,
   available,
+  url,
+  homePageData,
 }) => {
   const stats = [
     {
@@ -44,7 +47,7 @@ export const ProjectCard = ({
   return (
     <div className="bg-white p-4 rounded-2xl shadow-lg border border-gray-200 w-full mx-auto">
       <Image
-        src="/images/project_card.png"
+        src={url}
         width={1200}
         height={1200}
         quality={100}
@@ -72,11 +75,13 @@ export const ProjectCard = ({
         ))}
       </div>
       <button
-        onClick={() => router.push("/booking")}
-        className="mt-6 w-full py-3 text-md text-white bg-[#066FA9] rounded-xl shadow-lg cursor-pointer  transition-colors flex items-center justify-center space-x-2"
+        onClick={() => router.push(homePageData?.button?.link)}
+        className="w-full mt-6    text-white cursor-pointer font-[400] py-3 text-center flex   justify-center items-center gap-2 px-8 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] bg-[#066FA9] hover:shadow-xl group"
       >
-        <span>Add Booking</span>
-        <GoArrowRight className="text-2xl" />
+        <span>{homePageData?.button?.text}</span>
+        <span className="transition-transform duration-300 ease-in-out group-hover:translate-x-1">
+          <HiOutlineArrowSmallRight className="text-lg" />
+        </span>
       </button>
     </div>
   );

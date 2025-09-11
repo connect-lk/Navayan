@@ -10,10 +10,10 @@ const CoApplicantDetails = () => {
               key={key}
               className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 items-center"
             >
-              <div className="justify-center text-gray-500 lg:text-[16px] text-sm font-normal  leading-tight">
+              <div className="justify-center text-gray-500 lg:text-[16px] text-[15px] font-normal  leading-tight">
                 {key}
               </div>
-              <div className="text-right justify-center text-gray-500 lg:text-[16px] text-sm font-normal leading-tight">
+              <div className="md:text-right text-left justify-center text-gray-500 lg:text-[16px] text-[15px] font-normal leading-tight">
                 {value}
               </div>
             </div>

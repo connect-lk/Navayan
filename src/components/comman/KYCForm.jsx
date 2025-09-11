@@ -37,8 +37,8 @@ const KYCForm = ({ handleNextStep }) => {
   const validationSchema = buildValidationSchema();
 
   const handleSubmit = (values) => {
-    console.log("Form Data:", values);
-    handleNextStep();
+    -console.log("Form Data:", values);
+    handleNextStep(3);
   };
 
   return (
@@ -50,10 +50,10 @@ const KYCForm = ({ handleNextStep }) => {
       >
         {({ errors, touched }) => (
           <Form className="bg-white rounded-xl shadow-md 2xl:p-10 lg:p-6 md:p-4 p-2">
-            <h2 className="md:text-center text-center justify-center text-gray-800 md:text-3xl text-2xl font-bold md:mb-6 mb-3 mt-2 leading-9 ">
+            <h2 className="md:text-center text-center justify-center text-gray-800 md:text-3xl text-2xl font-bold md:mb-6 md:mt-0 mt-4 mb-3 leading-9 ">
               Complete Your KYC
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 gap-4">
               {/* Applicant Section */}
 
               <div>
@@ -61,28 +61,29 @@ const KYCForm = ({ handleNextStep }) => {
                   Name of Applicant
                 </h3>
                 <div className="space-y-4">
-                  {applicantFields.map((field) => (
-                    <div key={field.name}>
+                  {applicantFields?.map((field) => (
+                    <div key={field?.name}>
                       {field.type === "textarea" ? (
                         <Field
                           as="textarea"
-                          name={field.name}
-                          placeholder={field.placeholder}
+                          name={field?.name}
+                          placeholder={field?.placeholder}
                           className={`w-full px-4 ${
-                            field.type === "textarea" ? "h-24" : "h-auto"
-                          }  py-3  focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300`}
+                            field?.type === "textarea" ? "h-24" : "h-auto"
+                          }  py-3  focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300
+                           placeholder-[#6b7280]`}
                         />
                       ) : (
                         <Field
-                          type={field.type}
-                          name={field.name}
-                          placeholder={field.placeholder}
-                          className="w-full self-stretch px-3 py-3 bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-none focus:ring-1 focus:ring-[#066FA9]"
+                          type={field?.type}
+                          name={field?.name}
+                          placeholder={field?.placeholder}
+                          className="w-full self-stretch px-3 py-3 bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-none focus:ring-1 focus:ring-[#066FA9] placeholder-[#6b7280] "
                         />
                       )}
-                      {errors[field.name] && touched[field.name] && (
+                      {errors[field?.name] && touched[field?.name] && (
                         <div className="text-red-500 text-sm px-1 pt-1">
-                          {errors[field.name]}
+                          {errors[field?.name]}
                         </div>
                       )}
                     </div>
@@ -92,32 +93,32 @@ const KYCForm = ({ handleNextStep }) => {
 
               {/* Co-Applicant Section */}
               <div>
-                <h3 className="self-stretch justify-center text-center md:text-start text-gray-700 md:text-2xl text-xl font-semibold leading-loose md:b-4 mb-3">
+                <h3 className="self-stretch justify-center text-center md:text-start text-gray-700 md:text-2xl text-xl font-semibold leading-loose md:mb-4 mb-3">
                   Co-Applicant Name
                 </h3>
                 <div className="space-y-4">
-                  {coApplicantFields.map((field) => (
-                    <div key={field.name}>
-                      {field.type === "textarea" ? (
+                  {coApplicantFields?.map((field) => (
+                    <div key={field?.name}>
+                      {field?.type === "textarea" ? (
                         <Field
                           as="textarea"
-                          name={field.name}
-                          placeholder={field.placeholder}
+                          name={field?.name}
+                          placeholder={field?.placeholder}
                           className={` ${
-                            field.type === "textarea" ? "h-24" : "h-auto"
-                          }  py-3 px-4 w-full focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300`}
+                            field?.type === "textarea" ? "h-24" : "h-auto"
+                          }  py-3 px-4 w-full focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 placeholder-[#6b7280]`}
                         />
                       ) : (
                         <Field
-                          type={field.type}
-                          name={field.name}
-                          placeholder={field.placeholder}
-                          className="w-full self-stretch px-3 py-3 bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-none focus:ring-1 focus:ring-[#066FA9]"
+                          type={field?.type}
+                          name={field?.name}
+                          placeholder={field?.placeholder}
+                          className={`w-full self-stretch px-3 py-3 bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-none focus:ring-1 focus:ring-[#066FA9] placeholder-[#6b7280] `}
                         />
                       )}
-                      {errors[field.name] && touched[field.name] && (
+                      {errors[field?.name] && touched[field?.name] && (
                         <div className="text-red-500 text-sm px-1 pt-1">
-                          {errors[field.name]}
+                          {errors[field?.name]}
                         </div>
                       )}
                     </div>
@@ -127,25 +128,27 @@ const KYCForm = ({ handleNextStep }) => {
             </div>
 
             {/* Agreement Section */}
-            <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between">
+            <div className="mt-8 md:mb-0 mb-4 flex flex-col md:flex-row md:items-center justify-between">
               <div className="flex flex-col items-start">
-                    <p className="text-[#9CA3AF] py-2 text-sm text-gray-600">*All fields are mandatory </p>
-                <div className="flex items-start">
+                <p className=" py-2 text-sm text-gray-600">
+                  *All fields are mandatory{" "}
+                </p>
+                <div className="md:flex items-start">
                   <Field
                     type="checkbox"
                     name="termsAccepted"
-                    className="mt-1 h-6 w-6 text-[#066FA9] rounded border-gray-300 focus:ring-[#066FA9]"
+                    className="mt-1 md:ml-0 ml-1 h-5 w-5 text-[#066FA9] rounded border-gray-300 focus:ring-[#066FA9]"
                   />
                   <div className="ml-2 max-w-4xl block text-sm text-gray-600">
                     I confirm the details are true and consent to Neoteric
                     Properties using them for my property booking. I also
                     confirm my Co-Applicant's consent to share their
-                    information. Please refer to our 
-                    <a href="#" className="text-[#066FA9] hover:underline">
+                    information. Please refer to our
+                    <a href="#" className="text-[#066FA9] hover:underline md:px-0 px-1">
                       Terms & Conditions
-                    </a> 
-                    and 
-                    <a href="#" className="text-[#066FA9] hover:underline">
+                    </a>
+                    and
+                    <a href="#" className="text-[#066FA9] hover:underline md:px-0 px-1">
                       Privacy Policy
                     </a>
                     .
@@ -160,10 +163,10 @@ const KYCForm = ({ handleNextStep }) => {
               </div>
               <button
                 type="submit"
-                className="mt-6 md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-8 rounded-lg shadow-lg transition duration-200 ease-in-out transform md:hover:scale-105"
+                className="mt-6 md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-8 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
               >
-                Proceed{" "}
-                <span>
+                Proceed
+                <span className="transition-transform duration-300 ease-in-out group-hover:translate-x-1">
                   <HiOutlineArrowSmallRight className="text-lg" />
                 </span>
               </button>

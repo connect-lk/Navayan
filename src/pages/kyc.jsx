@@ -1,19 +1,33 @@
 import ApplicantDetails from "@/components/comman/ApplicantDetails";
 import CoApplicantDetails from "@/components/comman/CoApplicantDetails";
 import InventoryTable from "@/components/comman/InventoryTable";
+import { KycTableData } from "@/data";
+import { ReviewTableData } from "@/data";
 import KYCForm from "@/components/comman/KYCForm";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 
 // Main application component
 export default function page() {
   const [currentStep, setCurrentStep] = useState(2);
 
+  useEffect(() => {
+    const savedStep = localStorage.getItem("currentStep");
+    if (savedStep) {
+      setCurrentStep(parseInt(savedStep, 10));
+    }
+  }, []);
   const handleNextStep = () => {
     if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
+      const newStep = currentStep + 1;
+      setCurrentStep(newStep);
+      localStorage.setItem("currentStep", newStep);
     }
   };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [currentStep]);
 
   const steps = [
     { id: 1, name: "Select Property" },
@@ -26,7 +40,7 @@ export default function page() {
     if (currentStep === 2) {
       return (
         <div className=" ">
-          <InventoryTable kycTable={"kycTable"} />
+          <InventoryTable tableData={KycTableData} kycTable={"kycTable"} />
           <KYCForm handleNextStep={handleNextStep} />
         </div>
       );
@@ -34,31 +48,33 @@ export default function page() {
       return (
         <div className="">
           <div className="w-full md:py-6 py-4">
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-center md:text-left ">
+            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0 ">
               Selected Property
             </h1>
           </div>
-          <InventoryTable kycTable={"ReviewTable"} />
-          <div className="w-full py-6 mt-10">
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-center md:text-left ">
+          <InventoryTable
+            tableData={ReviewTableData}
+            kycTable={"ReviewTable"}
+          />
+          <div className="w-full py-6 md:mt-10 mt-4">
+            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
               Applicant’s Details
             </h1>
           </div>
           <ApplicantDetails />
-          <div className="w-full py-6 mt-10">
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-center md:text-left ">
+          <div className="w-full py-6 md:mt-10 mt-4">
+            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
               Co-Applicant’s Details
             </h1>
           </div>
           <CoApplicantDetails />
-          <div className="flex justify-center items-center py-12">
+          <div className="flex justify-center items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
             <button
-              type="submit"
               onClick={handleNextStep}
-              className="mt-6 md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex items-center gap-2 px-8 rounded-lg shadow-lg transition duration-200 ease-in-out transform md:hover:scale-105"
+              className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
             >
-              Proceed{" "}
-              <span>
+              Proceed
+              <span className="transition-transform duration-300 ease-in-out group-hover:translate-x-1">
                 <HiOutlineArrowSmallRight className="text-lg" />
               </span>
             </button>
@@ -66,7 +82,11 @@ export default function page() {
         </div>
       );
     } else if (currentStep === 4) {
-      return <div className=" ">Payment Component</div>;
+      return (
+        <div className="text-center h-96 items-center mx-auto w-full flex justify-center text-2xl">
+          Payment Component
+        </div>
+      );
     }
 
     return null;
@@ -112,7 +132,7 @@ export default function page() {
               </div>
               {/* Step name */}
               <div
-                className={`mt-2 text-center xl:text-lg md:text-md text-[11px] font-medium transition-colors duration-300 ${
+                className={`mt-2 text-center lg:text-[16px] md:text-md text-[11px] font-medium transition-colors duration-300 ${
                   currentStep >= step?.id ? "text-[#1C1C1C]" : "text-[#1C1C1C]"
                 }`}
               >
