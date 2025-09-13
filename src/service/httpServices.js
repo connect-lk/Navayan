@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const instance = axios.create({
-    baseURL: "https://staging.neotericproperties.in/wp-json/wp/v2",
+const instance = axios.create({ 
+    baseURL: "https://book.neotericproperties.in/wp-json/properties/v2",
     timeout: 120000,
     headers: {
         Accept: "application/json",

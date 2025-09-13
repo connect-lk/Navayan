@@ -1,9 +1,39 @@
+"use client";
 import { NewBookingCard } from "@/components/comman/NewBookingCard";
 import { IoSearchOutline } from "react-icons/io5";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import InventoryTable from "@/components/comman/InventoryTable";
 import { bookingData } from "../data";
+import AllPages from "@/service/allPages";
 const page = () => {
+  const [inventoryList, setInventoryList] = useState([]);
+
+  const InventoryListApiFun = async () => {
+    try {
+      const response = await AllPages.inventoryList(10); // property_id = 10
+      console.log("Inventory response:", response?.data);
+      setInventoryList(response?.data);
+    } catch (error) {
+      console.error("Error fetching inventory list:", error);
+    }
+  };
+
+  useEffect(() => {
+    InventoryListApiFun();
+  }, []);
+
+  const tableData = inventoryList?.map((item, index) => ({
+    sn: index + 1,
+    unitNo: `Block ${item?.block_no} - Flat ${item?.flat_no}`,
+    plotSize: item?.size,
+    plotFacing: item?.facing,
+    plc: "Corner",
+    cost: `₹${item?.amount}`,
+    addCost: "₹500000.00",
+    status: item?.status === "available" ? "Available" : "Booked",
+    booked: item?.status !== "available",
+  }));
+
   return (
     <div className="max-w-screen-2xl mx-auto pb-16 px-6 md:px-8 lg:px-12 2xl:px-0">
       <div className="max-w-screen-2xl mx-auto pt-12">
@@ -44,7 +74,7 @@ const page = () => {
           </div>
         </div>
       </div>
-      <InventoryTable tableData={bookingData?.table?.BookingTableData} />
+      <InventoryTable tableData={tableData} />
     </div>
   );
 };

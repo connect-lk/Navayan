@@ -1,9 +1,24 @@
 import { ProjectCard } from "@/components/comman/ProjectCard";
 import Image from "next/image";
-import React from "react";
-import { projects } from "../data";
+import React, { useEffect, useState } from "react";
 import { homePageData } from "../data";
+import AllPages from "@/service/allPages";
 const Home = () => {
+  const [Projects, setProjects] = useState();
+  console.log("Projects", Projects); 
+ 
+  const availableProjectApiFun = async () => {
+    try {
+      const response = await AllPages.properties();
+      setProjects(response[0]);
+    } catch (error) {
+      console.error("Error fetching feature projects:", error);
+    }
+  }; 
+  useEffect(() => {
+    availableProjectApiFun();
+  }, []);
+
   return (
     <div className="max-w-screen-2xl mx-auto pb-16 px-6 md:px-8 lg:px-12 2xl:px-0">
       <div className="relative w-full overflow-hidden mt-20 rounded-xl">
