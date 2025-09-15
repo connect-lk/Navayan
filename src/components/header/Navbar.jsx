@@ -15,6 +15,7 @@ const Navbar = () => {
               height={navbarData?.logo?.height}
               quality={navbarData?.logo?.quality}
               alt={navbarData?.logo?.alt}
+              priority
               className="md:w-56 w-40 h-full object-contain"
             />
             <h4 className="text-xs">built for today. rooted in trust.by <span className="text-[#F05936]">neoteric</span></h4>

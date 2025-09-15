@@ -5,8 +5,7 @@ import { homePageData } from "../data";
 import AllPages from "@/service/allPages";
 const Home = () => {
   const [Projects, setProjects] = useState();
-  console.log("Projects", Projects); 
- 
+
   const availableProjectApiFun = async () => {
     try {
       const response = await AllPages.properties();
@@ -14,7 +13,7 @@ const Home = () => {
     } catch (error) {
       console.error("Error fetching feature projects:", error);
     }
-  }; 
+  };
   useEffect(() => {
     availableProjectApiFun();
   }, []);
@@ -28,6 +27,7 @@ const Home = () => {
           width={1200}
           height={400}
           quality={100}
+          priority
           className="w-full lg:h-auto md:h-[350px] h-[200px] lg:object-contain object-cover"
         />
       </div>

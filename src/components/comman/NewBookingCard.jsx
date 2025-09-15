@@ -50,6 +50,7 @@ export const NewBookingCard = ({
           height={1200}
           quality={95}
           alt={projectName}
+          priority
           className="w-full h-[210px] rounded-xl object-cover"
         />
       </div>

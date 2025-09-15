@@ -1,17 +1,18 @@
 "use client";
-import { NewBookingCard } from "@/components/comman/NewBookingCard";
 import { IoSearchOutline } from "react-icons/io5";
 import React, { useEffect, useState } from "react";
+import { NewBookingCard } from "@/components/comman/NewBookingCard";
 import InventoryTable from "@/components/comman/InventoryTable";
-import { bookingData } from "../data";
+import { bookingData } from "@/data";
 import AllPages from "@/service/allPages";
-const page = () => {
+
+const index = () => {
   const [inventoryList, setInventoryList] = useState([]);
+  const [searchText, setSearchText] = useState(""); // <-- Add search state
 
   const InventoryListApiFun = async () => {
     try {
-      const response = await AllPages.inventoryList(10); // property_id = 10
-      console.log("Inventory response:", response?.data);
+      const response = await AllPages.inventoryList(10);
       setInventoryList(response?.data);
     } catch (error) {
       console.error("Error fetching inventory list:", error);
@@ -22,25 +23,41 @@ const page = () => {
     InventoryListApiFun();
   }, []);
 
-  const tableData = inventoryList?.map((item, index) => ({
-    sn: index + 1,
-    unitNo: `Block ${item?.block_no} - Flat ${item?.flat_no}`,
-    plotSize: item?.size,
-    plotFacing: item?.facing,
-    plc: "Corner",
-    cost: `₹${item?.amount}`,
-    addCost: "₹500000.00",
-    status: item?.status === "available" ? "Available" : "Booked",
-    booked: item?.status !== "available",
-  }));
+  const holdFlatFun = async (id) => {
+    try {
+      const response = await AllPages.holdFlat(id);
+      InventoryListApiFun();
+    } catch (error) {
+      console.error("Error holding flat:", error.message);
+    }
+  };
+
+  const tableData =
+    inventoryList?.map((item, index) => ({
+      id: item?.id,
+      sn: index + 1,
+      unitNo: `${item?.block_no} ${item?.flat_no}`,
+      plotSize: `${item?.size} sq.ft`,
+      plotFacing: item?.facing,
+      plc: "Corner",
+      cost: `₹${item?.amount}`,
+      addCost: "₹500000.00",
+      status: item?.status,
+      booked: item?.status !== "available",
+    })) || [];
+
+  // Filter based on searchText
+  const filteredData = tableData?.filter((item) =>
+    item?.unitNo?.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
-    <div className="max-w-screen-2xl mx-auto pb-16 px-6 md:px-8 lg:px-12 2xl:px-0">
+    <div className="max-w-screen-2xl mx-auto pb-16 px-6 min-h-screen   md:px-8 lg:px-12 2xl:px-0 ">
       <div className="max-w-screen-2xl mx-auto pt-12">
-        <h2 className="text-center justify-start text-neutral-900 md:text-3xl text-2xl font-bold  leading-7 md:my-8 my-6">
+        <h2 className="text-center justify-start text-neutral-900 md:text-3xl text-2xl font-bold leading-7 md:my-8 my-6">
           {bookingData?.heading}
         </h2>
-        <div className=" grid grid-cols-1 w-full  items-center md:items-stretch justify-center xl:gap-8 gap-4">
+        <div className="grid grid-cols-1 w-full items-center md:items-stretch justify-center xl:gap-8 gap-4">
           {bookingData?.projects?.map((project, index) => (
             <NewBookingCard
               key={index}
@@ -68,15 +85,18 @@ const page = () => {
                 type="text"
                 placeholder={bookingData?.searchPlaceholder}
                 className="w-full py-3.5 pl-4 pr-10 text-sm text-gray-700 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#066fa9]"
+                value={searchText} // <-- Bind value
+                onChange={(e) => setSearchText(e.target.value)} // <-- Handle change
               />
               <IoSearchOutline className="absolute right-3 w-5 h-5 text-gray-500" />
             </div>
           </div>
         </div>
       </div>
-      <InventoryTable tableData={tableData} />
+
+      <InventoryTable tableData={filteredData} holdFlatFun={holdFlatFun} />
     </div>
   );
 };
 
-export default page;
+export default index;
