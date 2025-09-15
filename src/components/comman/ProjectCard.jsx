@@ -50,7 +50,7 @@ export const ProjectCard = ({
         src={url}
         width={1200}
         height={1200}
-        quality={100}
+        quality={95}
         priority
         alt={`Image of ${projectName}`}
         className="w-full xl:h-[240px] h-[200px] rounded-xl object-cover mb-4"

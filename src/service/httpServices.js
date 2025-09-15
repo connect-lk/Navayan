@@ -2,11 +2,11 @@ import axios from "axios";
 
 const instance = axios.create({
   baseURL: "https://book.neotericproperties.in/wp-json/wp/v2",
-  timeout: 120000,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
+    timeout: 120000,
+    headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+    },
 });
 
 const responseBody = (response) => response.data;
