@@ -4,13 +4,12 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { applicantFields } from "../../data.js";
 import { coApplicantFields } from "../../data.js";
+import { applicantAutoFillData } from "../../data.js";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 import { useRouter } from "next/router";
 
-// Build Yup validation dynamically based on fields
 const buildValidationSchema = () => {
   const schemaShape = {};
-
   [...applicantFields, ...coApplicantFields].forEach((field) => {
     if (field.type === "email") {
       schemaShape[field.name] = Yup.string()
@@ -24,15 +23,24 @@ const buildValidationSchema = () => {
     [true],
     "You must accept the terms"
   );
-
   return Yup.object().shape(schemaShape);
 };
 
 const initialValues = {};
 [...applicantFields, ...coApplicantFields].forEach((field) => {
-  initialValues[field.name] = "";
+  if (applicantAutoFillData?.hasOwnProperty(field?.name)) {
+    initialValues[field?.name] = applicantAutoFillData[field?.name];
+  } else {
+    initialValues[field?.name] = "";
+  }
 });
 initialValues["termsAccepted"] = false;
+
+// const initialValues = {};
+// [...applicantFields, ...coApplicantFields].forEach((field) => {
+//   initialValues[field.name] = "";
+// });
+// initialValues["termsAccepted"] = false;
 
 const KYCForm = ({ handleNextStep }) => {
   const validationSchema = buildValidationSchema();
@@ -53,20 +61,20 @@ const KYCForm = ({ handleNextStep }) => {
         {({ errors, touched }) => (
           <Form className="bg-white rounded-xl shadow-md 2xl:p-10 lg:p-6 md:p-4 p-2">
             <div className="bg-white  p-8">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center ">
                 <h2 className="md:text-center text-center justify-center text-gray-800 md:text-3xl text-2xl font-bold md:mt-0 mt-4 mb-3 leading-9 flex-grow">
                   Complete Your KYC
                 </h2>
               </div>
 
-              <div className="items-center justify-center text-center flex">
+              {/* <div className="items-center justify-center text-center flex mt-6">
                 <button className="py-3.5 my-8 md:px-16 px-4 bg-[#066FA9] rounded-lg text-white cursor-pointer text-sm font-medium font-['Inter'] leading-tight">
                   Complete Your KYC
                 </button>
-              </div>
+              </div> */}
             </div>
 
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 gap-4">
               <div>
                 <h3 className="tself-stretch text-center md:text-start justify-center text-gray-700 md:text-2xl text-xl font-semibold  leading-loose md:mb-4 mb-3">
                   Name of Applicant
@@ -100,7 +108,7 @@ const KYCForm = ({ handleNextStep }) => {
                     </div>
                   ))}
                 </div>
-              </div> 
+              </div>
               <div>
                 <h3 className="self-stretch justify-center text-center md:text-start text-gray-700 md:text-2xl text-xl font-semibold leading-loose md:mb-4 mb-3">
                   Co-Applicant Name
@@ -134,9 +142,9 @@ const KYCForm = ({ handleNextStep }) => {
                   ))}
                 </div>
               </div>
-            </div> */}
+            </div>
 
-            {/* <div className="mt-8 md:mb-0 mb-4 flex flex-col md:flex-row md:items-center justify-between">
+            <div className="mt-8 md:mb-0 mb-4 flex flex-col md:flex-row md:items-center justify-between">
               <div className="flex flex-col items-start">
                 <p className=" py-2 text-sm text-gray-600">
                   *All fields are mandatory{" "}
@@ -184,7 +192,7 @@ const KYCForm = ({ handleNextStep }) => {
                   <HiOutlineArrowSmallRight className="text-lg" />
                 </span>
               </button>
-            </div> */}
+            </div>
           </Form>
         )}
       </Formik>

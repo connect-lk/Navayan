@@ -5,15 +5,14 @@ import { homePageData } from "../data";
 import AllPages from "@/service/allPages";
 const Home = () => {
   const [Projects, setProjects] = useState(); 
- 
   const availableProjectApiFun = async () => {
     try {
       const response = await AllPages.properties();
-      setProjects(response[0]);
+      setProjects(response);
     } catch (error) {
       console.error("Error fetching feature projects:", error);
     }
-  }; 
+  };
   useEffect(() => {
     availableProjectApiFun();
   }, []);
@@ -36,15 +35,16 @@ const Home = () => {
           {homePageData?.heading}
         </h2>
         <div className=" grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1  items-center md:items-stretch justify-center xl:gap-8 gap-4">
-          {homePageData?.projects?.map((project, index) => (
+          {Projects?.map((project, index) => (
             <ProjectCard
               key={index}
-              url={project?.image}
-              projectName={project?.projectName}
-              total={project?.total}
-              available={project?.available}
-              onHold={project?.onHold}
-              booked={project?.booked}
+              url={project?.acf?.property_image?.url}
+              projectName={project?.title?.rendered}
+              total={project?.flats_available?.total}
+              available={project?.flats_available?.available}
+              onHold={project?.flats_available?.hold}
+              booked={project?.flats_available?.booked}
+              slug={project?.slug}
               homePageData={homePageData}
             />
           ))}

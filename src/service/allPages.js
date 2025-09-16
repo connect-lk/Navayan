@@ -1,9 +1,19 @@
 import requests from "./httpServices";
+let propertiesCache = null;
 
 const AllPages = {
   properties: async () => {
+
+    if (propertiesCache) {
+      return propertiesCache;
+    }
     try {
-      return await requests.get("/properties?acf_format=standard");
+      const timestamp = new Date().getTime(); // cache-busting if needed
+      const response = await requests.get(
+        `/properties?acf_format=standard&t=${timestamp}`
+      );
+      propertiesCache = response;
+      return response;
     } catch (error) {
       console.error(
         "Error fetching properties:",

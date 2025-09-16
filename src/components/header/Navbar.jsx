@@ -9,16 +9,17 @@ const Navbar = () => {
       <header className="w-full max-w-screen-2xl mx-auto flex items-center h-[85px] justify-between p-4 2xl:p-0">
         <Link href={navbarData?.logo?.link || "/"}>
           <div className="flex flex-col gap-1">
-            <Image
-              src={navbarData?.logo?.src}
-              width={navbarData?.logo?.width}
-              height={navbarData?.logo?.height}
-              quality={navbarData?.logo?.quality}
-              alt={navbarData?.logo?.alt}
-              priority
-              className="md:w-56 w-40 h-full object-contain"
-            />
-            <h4 className="text-xs">built for today. rooted in trust.by <span className="text-[#F05936]">neoteric</span></h4>
+            {navbarData?.logo?.src ? (
+              <Image
+                src={navbarData?.logo?.src || "/images/default-logo.png"}
+                width={1200}
+                height={1000}
+                quality={95}
+                alt={navbarData?.logo?.alt}
+                priority
+                className="md:w-56 w-40 h-full object-contain"
+              />
+            ) : null}
           </div>
         </Link>
         <div className="flex items-center space-x-10">
@@ -38,4 +39,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

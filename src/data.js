@@ -1,11 +1,8 @@
 // src/data/navbarData.js
 export const navbarData = {
   logo: {
-    src: "/images/navayanlogo.png",
-    link: "/",
-    width: 1200,
-    height: 1000,
-    quality: 95,
+    src: "/images/logo.png",
+    link: "/", 
     alt: "Navayan Logo",
   },
   disclaimerlinks: {
@@ -18,36 +15,11 @@ export const navbarData = {
   },
 };
 
-export const KycTableData = [
-  {
-    sn: 1,
-    unitNo: "S1",
-    plotSize: "1500 sq.ft.",
-    plotFacing: "North",
-    plc: "Garden",
-    cost: "₹ 7,50,000",
-    addCost: "₹ 50,000",
-    status: "Available",
-    booked: false,
-  },
-];
-export const ReviewTableData = [
-  {
-    sn: 1,
-    unitNo: "S1",
-    plotSize: "1500 sq.ft.",
-    plotFacing: "North",
-    plc: "Garden",
-    cost: "₹ 7,50,000",
-    addCost: "₹ 50,000",
-    status: "Available",
-    booked: false,
-  },
-];
+ 
 
 export const homePageData = {
   banner: {
-    image: "/images/home1.png", 
+    image: "/images/home1.png",
     alt: "A happy family jumping for joy in a park",
   },
   heading: "Available Projects",
@@ -333,4 +305,17 @@ export const applicantData = {
   "PAN No. of Applicant": "HBUBB8857",
   DOB: "08/11/1990",
   "Profession of Applicant": "Example Text",
+};
+
+export const applicantAutoFillData = {
+  applicantAadhar: "496895208976",
+  applicantAdditionalPhone: "8107545771",
+  applicantAddress: "hello world",
+  applicantCof: "abcd",
+  applicantDob: "2025-09-18",
+  applicantEmail: "abcd@gmail.com",
+  applicantName: "sonu kumar saini",
+  applicantPan: "56Ad67HJ",
+  applicantPhone: "08107545771",
+  applicantProfession: "acbd",
 };

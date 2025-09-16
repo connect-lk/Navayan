@@ -5,10 +5,29 @@ import { NewBookingCard } from "@/components/comman/NewBookingCard";
 import InventoryTable from "@/components/comman/InventoryTable";
 import { bookingData } from "@/data";
 import AllPages from "@/service/allPages";
+import { useRouter } from "next/router";
 
 const index = () => {
   const [inventoryList, setInventoryList] = useState([]);
   const [searchText, setSearchText] = useState(""); // <-- Add search state
+
+  const router = useRouter();
+  const { slug } = router.query; // get slug from URL
+  const [project, setProject] = useState(null);
+  const fetchProject = async () => {
+    if (!slug) return;
+    try {
+      const allProjects = await AllPages.properties(); // fetch all projects
+      const matchedProject = allProjects.find((p) => p.slug === slug);
+      setProject(matchedProject);
+    } catch (error) {
+      console.error("Error fetching project:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProject();
+  }, [slug]);
 
   const InventoryListApiFun = async () => {
     try {
@@ -58,18 +77,16 @@ const index = () => {
           {bookingData?.heading}
         </h2>
         <div className="grid grid-cols-1 w-full items-center md:items-stretch justify-center xl:gap-8 gap-4">
-          {bookingData?.projects?.map((project, index) => (
-            <NewBookingCard
-              key={index}
-              projectName={project?.projectName}
-              total={project?.total}
-              available={project?.available}
-              onHold={project?.onHold}
-              booked={project?.booked}
-              url={project?.image}
-              project_subtitle={project?.project_subtitle}
-            />
-          ))}
+          <NewBookingCard
+            project_subtitle={"Property Details"}
+            url={project?.acf?.property_image?.url}
+            projectName={project?.title?.rendered}
+            total={project?.flats_available?.total}
+            available={project?.flats_available?.available}
+            onHold={project?.flats_available?.hold}
+            booked={project?.flats_available?.booked}
+            slug={project?.slug}
+          />
         </div>
       </div>
 
@@ -80,21 +97,25 @@ const index = () => {
           </h1>
 
           <div className="w-full sm:w-80">
-            <div className="relative flex items-center bg-white rounded-lg shadow-inner">
+            <div className="relative flex items-center bg-white rounded-xl shadow-inner">
               <input
                 type="text"
                 placeholder={bookingData?.searchPlaceholder}
-                className="w-full py-3.5 pl-4 pr-10 text-sm text-gray-700 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#066fa9]"
+                className="w-full py-3.5 pl-4 pr-10 text-sm text-gray-700 font-[600] placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#066fa9]"
                 value={searchText} // <-- Bind value
                 onChange={(e) => setSearchText(e.target.value)} // <-- Handle change
               />
-              <IoSearchOutline className="absolute right-3 w-5 h-5 text-gray-500" />
+              <IoSearchOutline className="absolute right-3 w-5 h-5 font-[900] text-gray-500" />
             </div>
           </div>
         </div>
       </div>
 
-      <InventoryTable tableData={filteredData} holdFlatFun={holdFlatFun} />
+      <InventoryTable
+        tableData={filteredData}
+        holdFlatFun={holdFlatFun}
+        slug={slug}
+      />
     </div>
   );
 };

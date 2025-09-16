@@ -5,18 +5,20 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-        'http://localhost:4600', // local dev
-        'book.neotericproperties.in',
-        '*.my-proxy.com',
+        "http://localhost:4600", // local dev
+        "book.neotericproperties.in",
+        "*.my-proxy.com",
       ],
     },
   },
-    images: {
+  images: {
     qualities: [75, 85, 95], // Allowed quality values
   },
+  images: {
+    domains: ["book.neotericproperties.in"],
+  },
   reactStrictMode: true,
-  swcMinify: true,  // faster minification
-
+  swcMinify: true, // faster minification
 };
 
 // Use ESM export

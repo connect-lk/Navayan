@@ -1,7 +1,7 @@
 import React from "react";
 
 import { useRouter } from "next/router";
-const InventoryTable = ({ kycTable, tableData, holdFlatFun }) => {
+const InventoryTable = ({ kycTable, tableData, holdFlatFun ,slug }) => {
   const router = useRouter();
   return (
     <div
@@ -82,7 +82,7 @@ const InventoryTable = ({ kycTable, tableData, holdFlatFun }) => {
                         <button
                           onClick={async () => {
                             await holdFlatFun(row?.id);
-                            router.push(`/booking/${row?.id}`);
+                            router.push(`/properties/${slug}/bookingproperties/${row?.id}`);
                           }}
                           className={`font-semibold px-4 py-2 text-[14px] w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${
                             row?.booked
