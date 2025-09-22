@@ -13,7 +13,7 @@ import AllPages from "@/service/allPages";
 // Main application component
 export default function page() {
   const [currentStep, setCurrentStep] = useState(2);
-
+  const [loading, setLoading] = useState(true);
   const params = useParams();
   const bookingId = params?.bookingId;
 
@@ -21,12 +21,16 @@ export default function page() {
 
   const InventoryListApiFun = async () => {
     try {
+      setLoading(true);
       const response = await AllPages.inventoryList(10);
       const data = response?.data || [];
       const matchedItem = data.find((item) => item.id === bookingId);
       setInventoryItem(matchedItem);
     } catch (error) {
       console.error("Error fetching inventory item:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,7 +86,11 @@ export default function page() {
     if (currentStep === 2) {
       return (
         <div className=" ">
-          <InventoryTable tableData={tableData} kycTable={"kycTable"} />
+          <InventoryTable
+            tableData={tableData}
+            kycTable={"kycTable"}
+            loading={loading}
+          />
           <KYCForm handleNextStep={handleNextStep} />
         </div>
       );

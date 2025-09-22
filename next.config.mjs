@@ -12,7 +12,7 @@ const nextConfig = {
     },
   },
   images: {
-    qualities: [75, 85, 95], // Allowed quality values
+    qualities: [75, 85, 95,100], // Allowed quality values
   },
   images: {
     domains: ["book.neotericproperties.in"],

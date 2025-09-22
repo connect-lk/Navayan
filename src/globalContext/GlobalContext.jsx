@@ -12,7 +12,7 @@ export function GlobalContextProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   return (
-    <GlobalContext.Provider value={{ options, loading }} >
+    <GlobalContext.Provider value={{ options, loading }}>
       {children}
     </GlobalContext.Provider>
   );

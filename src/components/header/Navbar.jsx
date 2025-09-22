@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { memo } from "react";
 import { navbarData } from "../../data";
 
-const Navbar = () => {
+const Navbar = memo(() => {
   return (
     <section className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
       <header className="w-full max-w-screen-2xl mx-auto flex items-center h-[85px] justify-between p-4 2xl:p-0">
@@ -36,6 +36,8 @@ const Navbar = () => {
       </header>
     </section>
   );
-};
+});
+
+Navbar.displayName = "Navbar";
 
 export default Navbar;
