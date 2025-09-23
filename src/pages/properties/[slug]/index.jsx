@@ -153,6 +153,7 @@ const index = () => {
         getAadhaarDetails(session_id).then((Details) => {
           // Save object as JSON string
           localStorage.setItem("kyc_Details", JSON.stringify(Details));
+          localStorage.setItem("session_id", session_id);
 
           // Optional: if you want to set state from storage later
           setKycDetails(Details);

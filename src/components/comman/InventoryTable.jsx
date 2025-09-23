@@ -7,10 +7,58 @@ import { MdArrowBackIosNew } from "react-icons/md";
 import AllPages from "@/service/allPages";
 
 const InventoryTable = memo(
-  ({ kycTable, tableData, slug, loading, InventoryListApiFun }) => {
+  ({ kycTable, tableData, slug,holdFlatFun, loading, InventoryListApiFun }) => {
     const router = useRouter();
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [now, setNow] = useState(new Date()); // track current time
+    const rowsPerPage = 20;
 
+    // ✅ Update current time every second
+    useEffect(() => {
+      const interval = setInterval(() => setNow(new Date()), 1000);
+      return () => clearInterval(interval);
+    }, []);
+
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentRows = tableData?.slice(indexOfFirstRow, indexOfLastRow);
+    const totalPages = Math.ceil(tableData?.length / rowsPerPage);
+
+    // ⏳ Format mm:ss
+    const formatTime = (seconds) => {
+      const m = Math.floor(seconds / 60)
+        .toString()
+        .padStart(2, "0");
+      const s = (seconds % 60).toString().padStart(2, "0");
+      return `${m}:${s}`;
+    };
+    const getRemainingTime = (expiresAt) => {
+      if (!expiresAt) return 0;
+      const expiry = new Date(expiresAt.replace(" ", "T")).getTime();
+      const now = new Date().getTime();
+
+      const diff = Math.round((expiry - now) / 1000); // round instead of floor
+      return diff > 0 ? diff : 0;
+    };
+
+    // 📌 Book Now
+    // const handleBookNow = useCallback(
+    //   async (plotNo) => {
+    //     try {
+    //       const res = await AllPages.holdFlat(plotNo);
+    //       console.log("API Response:", res);
+    //       InventoryListApiFun();
+    //       router.push(`/properties/${slug}/bookingproperties/${plotNo}`);
+    //     } catch (error) {
+    //       console.error("Booking failed:", error.message);
+    //     }
+    //   },
+    //   [router, slug]
+    // );
+
+
+    
      const getAadhaarDetails = async (session_id) => {
 
     const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
@@ -63,10 +111,11 @@ const InventoryTable = memo(
 
     const handleBookNow = useCallback(
       async (id) => {
-        // await holdFlatFun(id)
+        await holdFlatFun(id)
         localStorage.setItem("booking_id",id)
 
-        const session_id = "1f214c31-a152-4c7e-be35-f447d1c64bdf";
+        // const session_id = "a64ece23-43a7-426d-b6b8-aed7148debbb";
+        const session_id = localStorage.getItem("session_id");
         const access_token = localStorage.getItem("accessToken");
 
         const statusRes = await fetch(
@@ -108,10 +157,10 @@ const InventoryTable = memo(
         localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
       }
 
-    if (data.digiData?.data?.authorization_url) {
-      window.location.href = data.digiData.data.authorization_url; // redirect user
-    } else {
-        console.error("No authorization URL found", data);
+      if (data.digiData?.data?.authorization_url) {
+        window.location.href = data.digiData.data.authorization_url; // redirect user
+      } else {
+          console.error("No authorization URL found", data);
       }
       
       }else{
@@ -123,10 +172,7 @@ const InventoryTable = memo(
           router.push(`/properties/${slug}/bookingproperties/${id}`);
         });
       }
-      },
-      [router, slug]
-    );
-
+    })
     return (
       <div className="bg-white rounded-xl min-h-auto shadow-sm">
         <div className="rounded-xl overflow-hidden bg-gray-100">
