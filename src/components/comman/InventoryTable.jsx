@@ -7,10 +7,119 @@ const InventoryTable = memo(
   ({ kycTable, tableData, holdFlatFun, slug, loading }) => {
     const router = useRouter();
 
+
+     const getAadhaarDetails = async (session_id) => {
+
+    const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+
+    const res = await fetch(
+      `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
+    );
+    const digilocker_issued_docData = await res.json();
+    console.log("Aadhaar document:", digilocker_issued_docData);
+
+
+    const responsess = await fetch("/api/xml_to_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileUrl: digilocker_issued_docData.pan.data.files[0].url
+      }),
+    });
+
+    const datass = await responsess.json();
+    const panKyc = datass.data.Certificate.CertificateData.PAN;
+
+
+    const response = await fetch("/api/xml_to_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileUrl: digilocker_issued_docData.aadhaar.data.files[0].url
+      }),
+    });
+
+    const data = await response.json();
+    // console.log("Parsed XML object:", data.data);
+    const aadhaarKyc = data.data.Certificate.CertificateData.KycRes;
+
+    const userInfo = {
+      uid: aadhaarKyc.UidData.$.uid,
+      name: aadhaarKyc.UidData.Poi.$.name,
+      dob: aadhaarKyc.UidData.Poi.$.dob,
+      gender: aadhaarKyc.UidData.Poi.$.gender,
+      addressEnglish: aadhaarKyc.UidData.Poa.$,
+      addressLocal: aadhaarKyc.UidData.LData.$,
+      photo: aadhaarKyc.UidData.Pht,
+      panNum: panKyc.$.num
+    };
+
+    console.log(userInfo);
+    return userInfo
+  }
+
     const handleBookNow = useCallback(
       async (id) => {
-        await holdFlatFun(id);
-        router.push(`/properties/${slug}/bookingproperties/${id}`);
+        // await holdFlatFun(id)
+        localStorage.setItem("booking_id",id)
+
+        const session_id = "1f214c31-a152-4c7e-be35-f447d1c64bdf";
+        const access_token = localStorage.getItem("accessToken");
+
+        const statusRes = await fetch(
+          `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
+        );
+
+        const statusData = await statusRes.json();
+        console.log("Session Status:", statusData);
+      const createdAt = statusData?.data?.created_at;
+      const updatedAt = statusData?.data?.updated_at;
+
+      if (createdAt) {
+        console.log("Created At (raw):", createdAt);
+        console.log("Created At (ISO):", new Date(createdAt).toISOString());
+        console.log("Created At (local):", new Date(createdAt).toLocaleString());
+      }
+
+      if (updatedAt) {
+        console.log("Updated At (raw):", updatedAt);
+        console.log("Updated At (ISO):", new Date(updatedAt).toISOString());
+        console.log("Updated At (local):", new Date(updatedAt).toLocaleString());
+      }
+
+      if (statusData.sessionExpired) {
+        const res = await fetch("/api/digilocker", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          slug
+        })
+      });
+
+      const data = await res.json();
+      console.log("API Response:", data);
+
+      if (data.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
+      }
+
+    if (data.digiData?.data?.authorization_url) {
+      window.location.href = data.digiData.data.authorization_url; // redirect user
+    } else {
+        console.error("No authorization URL found", data);
+      }
+      
+      }else{
+        // alert()
+        getAadhaarDetails(session_id).then((Details) => {
+          // Save object as JSON string
+          localStorage.setItem("kyc_Details", JSON.stringify(Details));
+          const bokking_id = localStorage.getItem("booking_id");
+          router.push(`/properties/${slug}/bookingproperties/${id}`);
+        });
+      }
       },
       [holdFlatFun, router, slug]
     );

@@ -8,6 +8,14 @@ import { applicantAutoFillData } from "../../data.js";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 import { useRouter } from "next/router";
 
+
+// const initialValues = {};
+// [...applicantFields, ...coApplicantFields].forEach((field) => {
+//   initialValues[field.name] = "";
+// });
+// initialValues["termsAccepted"] = false;
+
+const KYCForm = ({ handleNextStep,kycDetails }) => {
 const buildValidationSchema = () => {
   const schemaShape = {};
   [...applicantFields, ...coApplicantFields].forEach((field) => {
@@ -26,6 +34,33 @@ const buildValidationSchema = () => {
   return Yup.object().shape(schemaShape);
 };
 
+const applicantAddress = [
+  kycDetails?.addressEnglish?.house,
+  kycDetails?.addressEnglish?.street,
+  kycDetails?.addressEnglish?.subdist,
+  kycDetails?.addressEnglish?.po,
+  kycDetails?.addressEnglish?.dist,
+  kycDetails?.addressEnglish?.state,
+  kycDetails?.addressEnglish?.country,
+  kycDetails?.addressEnglish?.pc
+].filter(Boolean)  // removes undefined, null, empty strings
+ .join(", ");
+
+
+  const applicantAutoFillData = {
+  applicantAadhar: kycDetails.uid,
+  applicantAdditionalPhone: "",
+  applicantAddress:applicantAddress,
+  applicantCof: kycDetails.addressEnglish.co,
+  applicantDob: kycDetails.dob,
+  applicantEmail: "",
+  applicantName: kycDetails.name,
+  applicantPan: kycDetails.panNum,
+  applicantPhone: "",
+  applicantProfession: "",
+};
+
+
 const initialValues = {};
 [...applicantFields, ...coApplicantFields].forEach((field) => {
   if (applicantAutoFillData?.hasOwnProperty(field?.name)) {
@@ -36,16 +71,13 @@ const initialValues = {};
 });
 initialValues["termsAccepted"] = false;
 
-// const initialValues = {};
-// [...applicantFields, ...coApplicantFields].forEach((field) => {
-//   initialValues[field.name] = "";
-// });
-// initialValues["termsAccepted"] = false;
 
-const KYCForm = ({ handleNextStep }) => {
   const validationSchema = buildValidationSchema();
   const router = useRouter();
 
+
+
+console.log("kycDetails",kycDetails)
   const handleSubmit = (values) => {
     console.log("Form Data:", values);
     handleNextStep(3);
@@ -87,6 +119,7 @@ const KYCForm = ({ handleNextStep }) => {
                           as="textarea"
                           name={field?.name}
                           placeholder={field?.placeholder}
+                          readOnly={field?.readOnly}
                           className={`w-full px-4 ${
                             field?.type === "textarea" ? "h-24" : "h-auto"
                           }  py-3  focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300
@@ -97,6 +130,7 @@ const KYCForm = ({ handleNextStep }) => {
                           type={field?.type}
                           name={field?.name}
                           placeholder={field?.placeholder}
+                          readOnly={field?.readOnly}
                           className="w-full self-stretch px-3 py-3 bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-none focus:ring-1 focus:ring-[#066FA9] placeholder-[#6b7280] "
                         />
                       )}

@@ -9,20 +9,23 @@ import React, { useEffect, useState } from "react";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 import { useParams } from "next/navigation";
 import AllPages from "@/service/allPages";
+import { useRouter } from "next/router";
 
 // Main application component
 export default function page() {
   const [currentStep, setCurrentStep] = useState(2);
   const [loading, setLoading] = useState(true);
+  const [kycDetails, setKycDetails] = useState({});
   const params = useParams();
   const bookingId = params?.bookingId;
-
+  const router = useRouter();
+  const { session_id } = router.query; // dynamically get session_id
   const [inventoryItem, setInventoryItem] = useState(null);
 
   const InventoryListApiFun = async () => {
     try {
       setLoading(true);
-      const response = await AllPages.inventoryList(10);
+      const response = await AllPages.inventoryList(41);
       const data = response?.data || [];
       const matchedItem = data.find((item) => item.id === bookingId);
       setInventoryItem(matchedItem);
@@ -40,19 +43,87 @@ export default function page() {
     }
   }, [bookingId]);
 
+  const getAadhaarDetails = async(session_id) => {
+
+         const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+
+      const res = await fetch(
+        `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
+      );
+      const digilocker_issued_docData = await res.json();
+      console.log("Aadhaar document:", digilocker_issued_docData);
+
+
+      const response = await fetch("/api/xml_to_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileUrl: digilocker_issued_docData.data.files[0].url
+      }),
+    });
+
+    const data = await response.json();
+    // console.log("Parsed XML object:", data.data);
+    const kyc = data.data.Certificate.CertificateData.KycRes;
+
+    const userInfo = {
+      uid: kyc.UidData.$.uid,
+      name: kyc.UidData.Poi.$.name,
+      dob: kyc.UidData.Poi.$.dob,
+      gender: kyc.UidData.Poi.$.gender,
+      addressEnglish: kyc.UidData.Poa.$,
+      addressLocal: kyc.UidData.LData.$,
+      photo: kyc.UidData.Pht
+    };
+
+    console.log(userInfo);
+    return userInfo
+  }
+  // useEffect(() => {
+  
+  //  if (session_id) {
+  //   //  const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+
+  //   //   const res = await fetch(
+  //   //     `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
+  //   //   );
+  //   //   const data = await res.json();
+  //   //   console.log("Aadhaar document:", data);
+
+
+  // getAadhaarDetails(session_id).then((Details) => {
+  //   // console.log("Details::", Details);
+  //     setKycDetails(Details)
+  // });
+
+
+  // // const Details =  getAadhaarDetails()
+  // //   console.log("Details::",Details)
+  // //   setKycDetails(Details)
+  //   }
+  // }, [session_id])
+  
+
   const tableData = inventoryItem
     ? [
         {
-          sn: 1,
-          unitNo: `Block ${inventoryItem.block_no} - Flat ${inventoryItem.flat_no}`,
-          plotSize: `${inventoryItem?.size} sq.ft`,
-          plotFacing: inventoryItem.facing,
-          plc: "Corner",
-          cost: `₹${inventoryItem.amount}`,
-          addCost: "₹500000.00",
-          status: inventoryItem.status,
-          booked: inventoryItem.status !== "available",
-        },
+      id: inventoryItem?.id,
+      // sn: index + 1, // Serial No
+      plotNo: inventoryItem?.plot_no, // PLOT NO.
+      plotSize: `${inventoryItem?.plot_size} sq.ft`, // PLOT SIZE
+      plotFacing: inventoryItem?.facing, // FACING
+      plcSide: inventoryItem?.plc_side, // PLC SIDE
+      plcPercentage: `${inventoryItem?.plc_percentage}%`, // PLC %
+      north: inventoryItem?.north, // NORTH
+      south: inventoryItem?.south, // SOUTH
+      east: inventoryItem?.east, // EAST
+      west: inventoryItem?.west, // WEST
+      withPlc: `₹${inventoryItem?.with_plc}`, // WITH PLC
+      additional: `₹${inventoryItem?.additional}`, // ADDITIONAL
+      total: `₹${inventoryItem?.total}`, // TOTAL
+      status: inventoryItem?.status, // STATUS
+      booked: inventoryItem?.status?.toLowerCase() !== "available", // booked flag
+    },
       ]
     : [];
 
@@ -61,8 +132,10 @@ export default function page() {
     if (savedStep) {
       setCurrentStep(parseInt(savedStep, 10));
     }
+const storedKyc = JSON.parse(localStorage.getItem("kyc_Details"));
+    setKycDetails(storedKyc)
   }, []);
-
+  
   const handleNextStep = () => {
     if (currentStep < 4) {
       const newStep = currentStep + 1;
@@ -81,7 +154,7 @@ export default function page() {
     { id: 3, name: "Review" },
     { id: 4, name: "Payment" },
   ];
-
+console.log("kycDetails::::",kycDetails)
   const renderContent = () => {
     if (currentStep === 2) {
       return (
@@ -91,7 +164,10 @@ export default function page() {
             kycTable={"kycTable"}
             loading={loading}
           />
-          <KYCForm handleNextStep={handleNextStep} />
+          {
+            kycDetails?.uid &&
+          <KYCForm handleNextStep={handleNextStep} kycDetails={kycDetails} />
+          }
         </div>
       );
     } else if (currentStep === 3) {

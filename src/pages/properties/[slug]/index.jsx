@@ -10,12 +10,12 @@ import { useRouter } from "next/router";
 const index = () => {
   const [inventoryList, setInventoryList] = useState([]);
   const [searchText, setSearchText] = useState(""); // <-- Add search state
-
+  const [kycDetails, setKycDetails] = useState({});
   const router = useRouter();
   const { slug } = router.query; // get slug from URL
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(false);
-
+  const { session_id } = router.query; // dynamically get session_id
   console.log("inventoryList", inventoryList);
   const fetchProject = async () => {
     if (!slug) return;
@@ -53,25 +53,12 @@ const index = () => {
   const holdFlatFun = async (id) => {
     try {
       await AllPages.holdFlat(id);
-      InventoryListApiFun();
+      
+      // InventoryListApiFun();
     } catch (error) {
       console.error("Error holding flat:", error.message);
     }
   };
-
-  // const tableData =
-  //   inventoryList?.map((item, index) => ({
-  //     id: item?.id,
-  //     sn: index + 1,
-  //     unitNo: `${item?.block_no} ${item?.flat_no}`,
-  //     plotSize: `${item?.size} sq.ft`,
-  //     plotFacing: item?.facing,
-  //     plc: "Corner",
-  //     cost: `₹${item?.amount}`,
-  //     addCost: "₹500000.00",
-  //     status: item?.status,
-  //     booked: item?.status !== "available",
-  //   })) || [];
 
   const tableData =
     inventoryList?.map((item, index) => ({
@@ -98,6 +85,88 @@ const index = () => {
     item?.unitNo?.toLowerCase().includes(searchText?.toLowerCase())
   );
 
+
+
+  const getAadhaarDetails = async (session_id) => {
+
+    const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+
+    const res = await fetch(
+      `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
+    );
+    const digilocker_issued_docData = await res.json();
+    console.log("Aadhaar document:", digilocker_issued_docData);
+
+
+    const responsess = await fetch("/api/xml_to_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileUrl: digilocker_issued_docData.pan.data.files[0].url
+      }),
+    });
+
+    const datass = await responsess.json();
+    const panKyc = datass.data.Certificate.CertificateData.PAN;
+
+
+    const response = await fetch("/api/xml_to_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileUrl: digilocker_issued_docData.aadhaar.data.files[0].url
+      }),
+    });
+
+    const data = await response.json();
+    // console.log("Parsed XML object:", data.data);
+    const aadhaarKyc = data.data.Certificate.CertificateData.KycRes;
+
+    const userInfo = {
+      uid: aadhaarKyc.UidData.$.uid,
+      name: aadhaarKyc.UidData.Poi.$.name,
+      dob: aadhaarKyc.UidData.Poi.$.dob,
+      gender: aadhaarKyc.UidData.Poi.$.gender,
+      addressEnglish: aadhaarKyc.UidData.Poa.$,
+      addressLocal: aadhaarKyc.UidData.LData.$,
+      photo: aadhaarKyc.UidData.Pht,
+      panNum: panKyc.$.num
+    };
+
+    console.log(userInfo);
+    return userInfo
+  }
+
+  useEffect(() => {
+
+    if (session_id) {
+      //  const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+
+      //   const res = await fetch(
+      //     `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
+      //   );
+      //   const data = await res.json();
+      //   console.log("Aadhaar document:", data);
+
+      const bokking_id = localStorage.getItem("booking_id")
+        getAadhaarDetails(session_id).then((Details) => {
+          // Save object as JSON string
+          localStorage.setItem("kyc_Details", JSON.stringify(Details));
+
+          // Optional: if you want to set state from storage later
+          setKycDetails(Details);
+
+          const bokking_id = localStorage.getItem("booking_id");
+          router.push(`/properties/${slug}/bookingproperties/${bokking_id}`);
+        });
+
+
+
+      // const Details =  getAadhaarDetails()
+      //   console.log("Details::",Details)
+      //   setKycDetails(Details)
+    }
+  }, [session_id])
   return (
     <div className="max-w-screen-2xl mx-auto pb-16 px-6 min-h-screen   md:px-8 lg:px-12 2xl:px-0 ">
       {loading ? (
