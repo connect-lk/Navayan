@@ -7,9 +7,17 @@ import { MdArrowBackIosNew } from "react-icons/md";
 import AllPages from "@/service/allPages";
 
 const InventoryTable = memo(
-  ({ kycTable, tableData, slug,holdFlatFun, loading, InventoryListApiFun }) => {
+  ({
+    kycTable,
+    tableData,
+    slug,
+    holdFlatFun,
+    loading,
+    InventoryListApiFun,
+  }) => {
     const router = useRouter();
 
+    const [loadingRow, setLoadingRow] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [now, setNow] = useState(new Date()); // track current time
     const rowsPerPage = 20;
@@ -57,122 +65,115 @@ const InventoryTable = memo(
     //   [router, slug]
     // );
 
+    const getAadhaarDetails = async (session_id) => {
+      const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
-    
-     const getAadhaarDetails = async (session_id) => {
+      const res = await fetch(
+        `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
+      );
+      const digilocker_issued_docData = await res.json();
+      console.log("Aadhaar document:", digilocker_issued_docData);
 
-    const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+      const responsess = await fetch("/api/xml_to_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileUrl: digilocker_issued_docData.pan.data.files[0].url,
+        }),
+      });
 
-    const res = await fetch(
-      `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
-    );
-    const digilocker_issued_docData = await res.json();
-    console.log("Aadhaar document:", digilocker_issued_docData);
+      const datass = await responsess.json();
+      const panKyc = datass.data.Certificate.CertificateData.PAN;
 
+      const response = await fetch("/api/xml_to_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileUrl: digilocker_issued_docData.aadhaar.data.files[0].url,
+        }),
+      });
 
-    const responsess = await fetch("/api/xml_to_text", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fileUrl: digilocker_issued_docData.pan.data.files[0].url
-      }),
-    });
+      const data = await response.json();
+      // console.log("Parsed XML object:", data.data);
+      const aadhaarKyc = data.data.Certificate.CertificateData.KycRes;
 
-    const datass = await responsess.json();
-    const panKyc = datass.data.Certificate.CertificateData.PAN;
+      const userInfo = {
+        uid: aadhaarKyc.UidData.$.uid,
+        name: aadhaarKyc.UidData.Poi.$.name,
+        dob: aadhaarKyc.UidData.Poi.$.dob,
+        gender: aadhaarKyc.UidData.Poi.$.gender,
+        addressEnglish: aadhaarKyc.UidData.Poa.$,
+        addressLocal: aadhaarKyc.UidData.LData.$,
+        photo: aadhaarKyc.UidData.Pht,
+        panNum: panKyc.$.num,
+      };
 
-
-    const response = await fetch("/api/xml_to_text", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fileUrl: digilocker_issued_docData.aadhaar.data.files[0].url
-      }),
-    });
-
-    const data = await response.json();
-    // console.log("Parsed XML object:", data.data);
-    const aadhaarKyc = data.data.Certificate.CertificateData.KycRes;
-
-    const userInfo = {
-      uid: aadhaarKyc.UidData.$.uid,
-      name: aadhaarKyc.UidData.Poi.$.name,
-      dob: aadhaarKyc.UidData.Poi.$.dob,
-      gender: aadhaarKyc.UidData.Poi.$.gender,
-      addressEnglish: aadhaarKyc.UidData.Poa.$,
-      addressLocal: aadhaarKyc.UidData.LData.$,
-      photo: aadhaarKyc.UidData.Pht,
-      panNum: panKyc.$.num
+      console.log(userInfo);
+      return userInfo;
     };
 
-    console.log(userInfo);
-    return userInfo
-  }
+    const handleBookNow = useCallback(async (id) => {
+    
+      localStorage.setItem("booking_id", id);
 
-    const handleBookNow = useCallback(
-      async (id) => {
-        await holdFlatFun(id)
-        localStorage.setItem("booking_id",id)
-
-        // const session_id = "a64ece23-43a7-426d-b6b8-aed7148debbb";
-        const session_id = localStorage.getItem("session_id");
-        const access_token = localStorage.getItem("accessToken");
-
+      // const session_id = "a64ece23-43a7-426d-b6b8-aed7148debbb";
+      const session_id = localStorage.getItem("session_id");
+      const access_token = localStorage.getItem("accessToken");
+ setLoadingRow(id);
+     let statusData;
+      if (session_id && access_token) {
         const statusRes = await fetch(
           `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
         );
-
+  
         const statusData = await statusRes.json();
         console.log("Session Status:", statusData);
-      const createdAt = statusData?.data?.created_at;
-      const updatedAt = statusData?.data?.updated_at;
-
-      if (createdAt) {
-        console.log("Created At (raw):", createdAt);
-        console.log("Created At (ISO):", new Date(createdAt).toISOString());
-        console.log("Created At (local):", new Date(createdAt).toLocaleString());
+        const createdAt = statusData?.data?.created_at;
+        const updatedAt = statusData?.data?.updated_at;
+        
       }
 
-      if (updatedAt) {
-        console.log("Updated At (raw):", updatedAt);
-        console.log("Updated At (ISO):", new Date(updatedAt).toISOString());
-        console.log("Updated At (local):", new Date(updatedAt).toLocaleString());
-      }
-
-      if (statusData.sessionExpired) {
+      if (statusData?.sessionExpired || !session_id) {
+        alert("d,jsahfjdasgfjh")
         const res = await fetch("/api/digilocker", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          slug
-        })
-      });
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            slug,
+          }),
+        });
 
-      const data = await res.json();
-      console.log("API Response:", data);
+        const data = await res.json();
+        console.log("API Response:", data);
 
-      if (data.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
-      }
+        if (data.accessToken) {
+          localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
+            await holdFlatFun(id);
+           
+        }
 
-      if (data.digiData?.data?.authorization_url) {
-        window.location.href = data.digiData.data.authorization_url; // redirect user
-      } else {
+        if (data.digiData?.data?.authorization_url) {
+          window.location.href = data.digiData.data.authorization_url; // redirect user
+        } else {
+          setLoadingRow(null);
           console.error("No authorization URL found", data);
-      }
-      
-      }else{
+        }
+      } else {
         // alert()
-        getAadhaarDetails(session_id).then((Details) => {
+
+         getAadhaarDetails(session_id).then( async(Details) => {
+            await holdFlatFun(id);
+              setLoadingRow(id);
+
           // Save object as JSON string
           localStorage.setItem("kyc_Details", JSON.stringify(Details));
           const bokking_id = localStorage.getItem("booking_id");
           router.push(`/properties/${slug}/bookingproperties/${id}`);
         });
       }
-    })
+    });
     return (
       <div className="bg-white rounded-xl min-h-auto shadow-sm">
         <div className="rounded-xl overflow-hidden bg-gray-100">
@@ -304,7 +305,7 @@ const InventoryTable = memo(
                             <td className="p-4 text-center bg-white sticky right-0 z-10">
                               <button
                                 onClick={() => handleBookNow(row?.plotNo)}
-                                className={`font-semibold px-4 py-2 text-[14px] w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${
+                                className={`font-semibold px-4 py-2 text-[14px] flex items-center gap-4 w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${
                                   row?.booked || isHoldActive
                                     ? "bg-[#D1D5DB] text-[#4B5563] cursor-not-allowed"
                                     : "hover:bg-[#055a87] bg-[#066FA9] text-white cursor-pointer"
@@ -316,6 +317,9 @@ const InventoryTable = memo(
                                   : isHoldActive
                                   ? "Hold"
                                   : "Book Now"}
+                                {loadingRow === row?.plotNo && (
+                                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                )}
                               </button>
                             </td>
                           )}

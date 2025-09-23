@@ -8,78 +8,105 @@ import { applicantAutoFillData } from "../../data.js";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 import { useRouter } from "next/router";
 
-
 // const initialValues = {};
 // [...applicantFields, ...coApplicantFields].forEach((field) => {
 //   initialValues[field.name] = "";
 // });
 // initialValues["termsAccepted"] = false;
 
-const KYCForm = ({ handleNextStep,kycDetails }) => {
-const buildValidationSchema = () => {
-  const schemaShape = {};
-  [...applicantFields, ...coApplicantFields].forEach((field) => {
-    if (field.type === "email") {
-      schemaShape[field.name] = Yup.string()
-        .email("Invalid email")
-        .required("Required");
-    } else {
-      schemaShape[field.name] = Yup.string().required("Required");
-    }
-  });
-  schemaShape["termsAccepted"] = Yup.bool().oneOf(
-    [true],
-    "You must accept the terms"
-  );
-  return Yup.object().shape(schemaShape);
-};
+const KYCForm = ({ handleNextStep, kycDetails, bookingId }) => {
+  // console.log("kycDetails",kycDetails)
+  const buildValidationSchema = () => {
+    const schemaShape = {};
+    [...applicantFields, ...coApplicantFields].forEach((field) => {
+      if (field.type === "email") {
+        schemaShape[field.name] = Yup.string()
+          .email("Invalid email")
+          .required("Required");
+      } else {
+        schemaShape[field.name] = Yup.string().required("Required");
+      }
+    });
+    schemaShape["termsAccepted"] = Yup.bool().oneOf(
+      [true],
+      "You must accept the terms"
+    );
+    return Yup.object().shape(schemaShape);
+  };
 
-const applicantAddress = [
-  kycDetails?.addressEnglish?.house,
-  kycDetails?.addressEnglish?.street,
-  kycDetails?.addressEnglish?.subdist,
-  kycDetails?.addressEnglish?.po,
-  kycDetails?.addressEnglish?.dist,
-  kycDetails?.addressEnglish?.state,
-  kycDetails?.addressEnglish?.country,
-  kycDetails?.addressEnglish?.pc
-].filter(Boolean)  // removes undefined, null, empty strings
- .join(", ");
-
+  const applicantAddress = [
+    kycDetails?.addressEnglish?.house,
+    kycDetails?.addressEnglish?.street,
+    kycDetails?.addressEnglish?.subdist,
+    kycDetails?.addressEnglish?.po,
+    kycDetails?.addressEnglish?.dist,
+    kycDetails?.addressEnglish?.state,
+    kycDetails?.addressEnglish?.country,
+    kycDetails?.addressEnglish?.pc,
+  ]
+    .filter(Boolean) // removes undefined, null, empty strings
+    .join(", ");
 
   const applicantAutoFillData = {
-  applicantAadhar: kycDetails.uid,
-  applicantAdditionalPhone: "",
-  applicantAddress:applicantAddress,
-  applicantCof: kycDetails.addressEnglish.co,
-  applicantDob: kycDetails.dob,
-  applicantEmail: "",
-  applicantName: kycDetails.name,
-  applicantPan: kycDetails.panNum,
-  applicantPhone: "",
-  applicantProfession: "",
-};
+    applicantAadhar: kycDetails.uid,
+    applicantAdditionalPhone: "",
+    applicantAddress: applicantAddress,
+    applicantCof: kycDetails.addressEnglish.co,
+    applicantDob: kycDetails.dob,
+    applicantEmail: "",
+    applicantName: kycDetails.name,
+    applicantPan: kycDetails.panNum,
+    applicantPhone: "",
+    applicantProfession: "",
+    applicantPhoto: kycDetails?.photo,
+  };
 
-
-const initialValues = {};
-[...applicantFields, ...coApplicantFields].forEach((field) => {
-  if (applicantAutoFillData?.hasOwnProperty(field?.name)) {
-    initialValues[field?.name] = applicantAutoFillData[field?.name];
-  } else {
-    initialValues[field?.name] = "";
-  }
-});
-initialValues["termsAccepted"] = false;
+  const initialValues = {};
+  [...applicantFields, ...coApplicantFields].forEach((field) => {
+    if (applicantAutoFillData?.hasOwnProperty(field?.name)) {
+      initialValues[field?.name] = applicantAutoFillData[field?.name];
+    } else {
+      initialValues[field?.name] = "";
+    }
+  });
+  initialValues["termsAccepted"] = false;
 
   const validationSchema = buildValidationSchema();
   const router = useRouter();
 
+  function generateBookingId() {
+    const randomId = Math.floor(100000 + Math.random() * 900000);
+    return "BK" + randomId.toString(); // Prefix with BK and make it string
+  }
+ 
 
+  const handleSubmit = async (values) => {
+    try {
+      const res = await fetch(
+        "https://book.neotericproperties.in/wp-json/wp/v2/book_flat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookingId: generateBookingId(), // include bookingId
+            paymentStatus: "pending", // include bookingId
+            photo: kycDetails?.photo,
+            ...values, // spread form values
+          }),
+        }
+      );
 
-console.log("kycDetails",kycDetails)
-  const handleSubmit = (values) => {
-    console.log("Form Data:", values);
-    handleNextStep(3);
+      const data = await res.json();
+      if (data.success) {
+        console.log("Booking & KYC saved:", data.data);
+      } else {
+        console.error("Failed:", data.message || data);
+      }
+    } catch (error) {
+      console.error("Error submitting booking:", error);
+    }
+
+    // handleNextStep(3);
   };
 
   return (

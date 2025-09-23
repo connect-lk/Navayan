@@ -43,22 +43,20 @@ export default function page() {
     }
   }, [bookingId]);
 
-  const getAadhaarDetails = async(session_id) => {
+  const getAadhaarDetails = async (session_id) => {
+    const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
-         const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+    const res = await fetch(
+      `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
+    );
+    const digilocker_issued_docData = await res.json();
+    console.log("Aadhaar document:", digilocker_issued_docData);
 
-      const res = await fetch(
-        `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
-      );
-      const digilocker_issued_docData = await res.json();
-      console.log("Aadhaar document:", digilocker_issued_docData);
-
-
-      const response = await fetch("/api/xml_to_text", {
+    const response = await fetch("/api/xml_to_text", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        fileUrl: digilocker_issued_docData.data.files[0].url
+        fileUrl: digilocker_issued_docData.data.files[0].url,
       }),
     });
 
@@ -73,14 +71,14 @@ export default function page() {
       gender: kyc.UidData.Poi.$.gender,
       addressEnglish: kyc.UidData.Poa.$,
       addressLocal: kyc.UidData.LData.$,
-      photo: kyc.UidData.Pht
+      photo: kyc.UidData.Pht,
     };
 
     console.log(userInfo);
-    return userInfo
-  }
+    return userInfo;
+  };
   // useEffect(() => {
-  
+
   //  if (session_id) {
   //   //  const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
@@ -90,19 +88,16 @@ export default function page() {
   //   //   const data = await res.json();
   //   //   console.log("Aadhaar document:", data);
 
-
   // getAadhaarDetails(session_id).then((Details) => {
   //   // console.log("Details::", Details);
   //     setKycDetails(Details)
   // });
-
 
   // // const Details =  getAadhaarDetails()
   // //   console.log("Details::",Details)
   // //   setKycDetails(Details)
   //   }
   // }, [session_id])
-  
 
   const tableData = inventoryItem
     ? [
@@ -121,8 +116,8 @@ export default function page() {
           additional: `₹${inventoryItem?.additional}`,
           total: `₹${inventoryItem?.total}`,
           status: inventoryItem?.status,
-          hold_expires_at:inventoryItem?.hold_expires_at,
-          created_at:inventoryItem?.created_at,
+          hold_expires_at: inventoryItem?.hold_expires_at,
+          created_at: inventoryItem?.created_at,
           booked: inventoryItem?.status?.toLowerCase() !== "available",
         },
       ]
@@ -133,10 +128,10 @@ export default function page() {
     if (savedStep) {
       setCurrentStep(parseInt(savedStep, 10));
     }
-const storedKyc = JSON.parse(localStorage.getItem("kyc_Details"));
-    setKycDetails(storedKyc)
+    const storedKyc = JSON.parse(localStorage.getItem("kyc_Details"));
+    setKycDetails(storedKyc);
   }, []);
-  
+
   const handleNextStep = () => {
     if (currentStep < 4) {
       const newStep = currentStep + 1;
@@ -155,7 +150,7 @@ const storedKyc = JSON.parse(localStorage.getItem("kyc_Details"));
     { id: 3, name: "Review" },
     { id: 4, name: "Payment" },
   ];
-console.log("kycDetails::::",kycDetails)
+  console.log("kycDetails::::", kycDetails);
   const renderContent = () => {
     if (currentStep === 2) {
       return (
@@ -165,10 +160,9 @@ console.log("kycDetails::::",kycDetails)
             kycTable={"kycTable"}
             loading={loading}
           />
-          {
-            kycDetails?.uid &&
-          <KYCForm handleNextStep={handleNextStep} kycDetails={kycDetails} />
-          }
+          {kycDetails?.uid && (
+            <KYCForm handleNextStep={handleNextStep} kycDetails={kycDetails}  bookingId={bookingId} />
+          )}
         </div>
       );
     } else if (currentStep === 3) {
