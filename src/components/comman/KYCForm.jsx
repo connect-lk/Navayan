@@ -36,12 +36,6 @@ const initialValues = {};
 });
 initialValues["termsAccepted"] = false;
 
-// const initialValues = {};
-// [...applicantFields, ...coApplicantFields].forEach((field) => {
-//   initialValues[field.name] = "";
-// });
-// initialValues["termsAccepted"] = false;
-
 const KYCForm = ({ handleNextStep }) => {
   const validationSchema = buildValidationSchema();
   const router = useRouter();

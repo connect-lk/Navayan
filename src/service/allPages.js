@@ -39,13 +39,14 @@ const AllPages = {
   },
 
   holdFlat: async (id) => {
-    try {
-      const res = await requests.post(`/hold?flat_id=${id}`);
-      if (res.status) {
-        console.log("Flat held successfully:", res.data);
+    try { 
+      const res = await requests.post(`/hold?property_id=41&plot_no=${id}`);
+        if (res.status) {
+        console.log("Flat held successfully:", res.data); 
       } else {
-        console.error("Failed to hold flat:", res.data, "Code:", res.code);
+        console.error("Failed to hold flat:", res.data, "Code:", res.code); 
       }
+       return res; // ✅ always return data
     } catch (error) {
       console.error(
         "Error fetching property detail:",

@@ -22,7 +22,7 @@ export default function page() {
   const InventoryListApiFun = async () => {
     try {
       setLoading(true);
-      const response = await AllPages.inventoryList(10);
+      const response = await AllPages.inventoryList(41);
       const data = response?.data || [];
       const matchedItem = data.find((item) => item.id === bookingId);
       setInventoryItem(matchedItem);
@@ -43,15 +43,23 @@ export default function page() {
   const tableData = inventoryItem
     ? [
         {
-          sn: 1,
-          unitNo: `Block ${inventoryItem.block_no} - Flat ${inventoryItem.flat_no}`,
-          plotSize: `${inventoryItem?.size} sq.ft`,
-          plotFacing: inventoryItem.facing,
-          plc: "Corner",
-          cost: `₹${inventoryItem.amount}`,
-          addCost: "₹500000.00",
-          status: inventoryItem.status,
-          booked: inventoryItem.status !== "available",
+          id: inventoryItem?.id,
+          plotNo: inventoryItem?.plot_no,
+          plotSize: `${inventoryItem?.plot_size} sq.ft`,
+          plotFacing: inventoryItem?.facing,
+          plcSide: inventoryItem?.plc_side,
+          plcPercentage: `${inventoryItem?.plc_percentage}%`,
+          north: inventoryItem?.north,
+          south: inventoryItem?.south,
+          east: inventoryItem?.east,
+          west: inventoryItem?.west,
+          withPlc: `₹${inventoryItem?.with_plc}`,
+          additional: `₹${inventoryItem?.additional}`,
+          total: `₹${inventoryItem?.total}`,
+          status: inventoryItem?.status,
+          hold_expires_at:inventoryItem?.hold_expires_at,
+          created_at:inventoryItem?.created_at,
+          booked: inventoryItem?.status?.toLowerCase() !== "available",
         },
       ]
     : [];

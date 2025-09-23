@@ -43,7 +43,7 @@ const NewBookingCard = memo(
     ];
 
     return (
-      <div className="bg-white p-4 rounded-2xl flex flex-col md:flex-row items-stretch gap-4 md:gap-8 shadow-lg border border-gray-200 w-full max-w-screen-2xl mx-auto">
+      <div className="bg-white p-4 rounded-2xl flex flex-col md:flex-row items-stretch gap-4 md:gap-8   w-full max-w-screen-2xl mx-auto">
         <div className="flex-shrink-0 w-full md:w-1/3 border-none">
           {url && (
             <Image
