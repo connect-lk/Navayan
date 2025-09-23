@@ -71,7 +71,6 @@ const initialValues = {};
 });
 initialValues["termsAccepted"] = false;
 
-
   const validationSchema = buildValidationSchema();
   const router = useRouter();
 

@@ -16,7 +16,6 @@ const index = () => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(false);
   const { session_id } = router.query; // dynamically get session_id
-  console.log("inventoryList", inventoryList);
   const fetchProject = async () => {
     if (!slug) return;
     try {
@@ -41,6 +40,7 @@ const index = () => {
     try {
       const response = await AllPages.inventoryList(41);
       setInventoryList(response?.data);
+      console.log("response",response?.data[0])
     } catch (error) {
       console.error("Error fetching inventory list:", error);
     }
@@ -53,8 +53,7 @@ const index = () => {
   const holdFlatFun = async (id) => {
     try {
       await AllPages.holdFlat(id);
-      
-      // InventoryListApiFun();
+      InventoryListApiFun();
     } catch (error) {
       console.error("Error holding flat:", error.message);
     }
@@ -63,26 +62,28 @@ const index = () => {
   const tableData =
     inventoryList?.map((item, index) => ({
       id: item?.id,
-      sn: index + 1, // Serial No
-      plotNo: item?.plot_no, // PLOT NO.
-      plotSize: `${item?.plot_size} sq.ft`, // PLOT SIZE
-      plotFacing: item?.facing, // FACING
-      plcSide: item?.plc_side, // PLC SIDE
-      plcPercentage: `${item?.plc_percentage}%`, // PLC %
-      north: item?.north, // NORTH
-      south: item?.south, // SOUTH
-      east: item?.east, // EAST
-      west: item?.west, // WEST
-      withPlc: `₹${item?.with_plc}`, // WITH PLC
-      additional: `₹${item?.additional}`, // ADDITIONAL
-      total: `₹${item?.total}`, // TOTAL
-      status: item?.status, // STATUS
-      booked: item?.status?.toLowerCase() !== "available", // booked flag
+      sn: index + 1,
+      plotNo: item?.plot_no,
+      plotSize: `${item?.plot_size} sq.ft`,
+      plotFacing: item?.facing,
+      plcSide: item?.plc_side,
+      plcPercentage: `${item?.plc_percentage}%`,
+      north: item?.north,
+      south: item?.south,
+      east: item?.east,
+      west: item?.west,
+      withPlc: `₹${item?.with_plc}`,
+      additional: `₹${item?.additional}`,
+      total: `₹${item?.total}`,
+      status: item?.status,
+      hold_expires_at:item?.hold_expires_at,
+      created_at:item?.created_at,
+      booked: item?.status?.toLowerCase() !== "available",
     })) || [];
 
   // Filter based on searchText
   const filteredData = tableData?.filter((item) =>
-    item?.unitNo?.toLowerCase().includes(searchText?.toLowerCase())
+    item?.plotNo?.toLowerCase().includes(searchText?.toLowerCase())
   );
 
 
@@ -193,14 +194,14 @@ const index = () => {
               />
             </div>
           </div>
-          <div className="w-full py-6">
+          <div className="w-full py-4">
             <div className="flex flex-col sm:flex-row items-center justify-between ">
               <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 mb-4 sm:mb-0 md:block hidden">
                 {bookingData?.inventoryHeading}
               </h1>
 
               <div className="w-full sm:w-80">
-                <div className="relative flex items-center bg-white rounded-xl shadow-inner">
+                <div className="relative flex items-center bg-white rounded-xl  ">
                   <input
                     type="text"
                     placeholder={bookingData?.searchPlaceholder}
@@ -214,8 +215,9 @@ const index = () => {
             </div>
           </div>
           <InventoryTable
-            tableData={tableData}
+            tableData={filteredData}
             holdFlatFun={holdFlatFun}
+            InventoryListApiFun={InventoryListApiFun}
             slug={slug}
           />
         </>

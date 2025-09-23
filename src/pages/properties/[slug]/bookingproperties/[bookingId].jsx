@@ -107,23 +107,24 @@ export default function page() {
   const tableData = inventoryItem
     ? [
         {
-      id: inventoryItem?.id,
-      // sn: index + 1, // Serial No
-      plotNo: inventoryItem?.plot_no, // PLOT NO.
-      plotSize: `${inventoryItem?.plot_size} sq.ft`, // PLOT SIZE
-      plotFacing: inventoryItem?.facing, // FACING
-      plcSide: inventoryItem?.plc_side, // PLC SIDE
-      plcPercentage: `${inventoryItem?.plc_percentage}%`, // PLC %
-      north: inventoryItem?.north, // NORTH
-      south: inventoryItem?.south, // SOUTH
-      east: inventoryItem?.east, // EAST
-      west: inventoryItem?.west, // WEST
-      withPlc: `₹${inventoryItem?.with_plc}`, // WITH PLC
-      additional: `₹${inventoryItem?.additional}`, // ADDITIONAL
-      total: `₹${inventoryItem?.total}`, // TOTAL
-      status: inventoryItem?.status, // STATUS
-      booked: inventoryItem?.status?.toLowerCase() !== "available", // booked flag
-    },
+          id: inventoryItem?.id,
+          plotNo: inventoryItem?.plot_no,
+          plotSize: `${inventoryItem?.plot_size} sq.ft`,
+          plotFacing: inventoryItem?.facing,
+          plcSide: inventoryItem?.plc_side,
+          plcPercentage: `${inventoryItem?.plc_percentage}%`,
+          north: inventoryItem?.north,
+          south: inventoryItem?.south,
+          east: inventoryItem?.east,
+          west: inventoryItem?.west,
+          withPlc: `₹${inventoryItem?.with_plc}`,
+          additional: `₹${inventoryItem?.additional}`,
+          total: `₹${inventoryItem?.total}`,
+          status: inventoryItem?.status,
+          hold_expires_at:inventoryItem?.hold_expires_at,
+          created_at:inventoryItem?.created_at,
+          booked: inventoryItem?.status?.toLowerCase() !== "available",
+        },
       ]
     : [];
 
