@@ -104,6 +104,7 @@ export default function page() {
         {
           id: inventoryItem?.id,
           plotNo: inventoryItem?.plot_no,
+          property_id: inventoryItem?.property_id, 
           plotSize: `${inventoryItem?.plot_size} sq.ft`,
           plotFacing: inventoryItem?.facing,
           plcSide: inventoryItem?.plc_side,
@@ -161,7 +162,7 @@ export default function page() {
             loading={loading}
           />
           {kycDetails?.uid && (
-            <KYCForm handleNextStep={handleNextStep} kycDetails={kycDetails}  bookingId={bookingId} />
+            <KYCForm handleNextStep={handleNextStep} kycDetails={kycDetails} tableData={tableData}  bookingId={bookingId} />
           )}
         </div>
       );

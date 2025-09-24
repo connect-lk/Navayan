@@ -14,8 +14,9 @@ import { useRouter } from "next/router";
 // });
 // initialValues["termsAccepted"] = false;
 
-const KYCForm = ({ handleNextStep, kycDetails, bookingId }) => {
-  // console.log("kycDetails",kycDetails)
+const KYCForm = ({ handleNextStep, tableData, kycDetails, bookingId }) => {
+  console.log("tableData", tableData[0]);
+  // console.log("bookingId",bookingId);
   const buildValidationSchema = () => {
     const schemaShape = {};
     [...applicantFields, ...coApplicantFields].forEach((field) => {
@@ -78,7 +79,6 @@ const KYCForm = ({ handleNextStep, kycDetails, bookingId }) => {
     const randomId = Math.floor(100000 + Math.random() * 900000);
     return "BK" + randomId.toString(); // Prefix with BK and make it string
   }
- 
 
   const handleSubmit = async (values) => {
     try {
@@ -88,10 +88,13 @@ const KYCForm = ({ handleNextStep, kycDetails, bookingId }) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            bookingId: generateBookingId(), // include bookingId
-            paymentStatus: "pending", // include bookingId
+            bookingId: generateBookingId(),
+            property_id: tableData[0]?.property_id,
+            plot_no: bookingId,
+            totalAmount: tableData[0]?.total,
+            paymentStatus: "pending",
             photo: kycDetails?.photo,
-            ...values, // spread form values
+            ...values,
           }),
         }
       );
@@ -124,12 +127,6 @@ const KYCForm = ({ handleNextStep, kycDetails, bookingId }) => {
                   Complete Your KYC
                 </h2>
               </div>
-
-              {/* <div className="items-center justify-center text-center flex mt-6">
-                <button className="py-3.5 my-8 md:px-16 px-4 bg-[#066FA9] rounded-lg text-white cursor-pointer text-sm font-medium font-['Inter'] leading-tight">
-                  Complete Your KYC
-                </button>
-              </div> */}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 gap-4">

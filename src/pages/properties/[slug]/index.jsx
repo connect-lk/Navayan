@@ -19,16 +19,13 @@ const index = () => {
   const fetchProject = async () => {
     if (!slug) return;
     try {
-      setLoading(true);
       const allProjects = await AllPages.properties();
       const matchedProject = allProjects.find((p) => p.slug === slug);
       setProject(matchedProject);
     } catch (error) {
       console.error("Error fetching project:", error);
       setProject([]);
-      setLoading(false);
     } finally {
-      setLoading(false);
     }
   };
 
@@ -40,7 +37,7 @@ const index = () => {
     try {
       const response = await AllPages.inventoryList(41);
       setInventoryList(response?.data);
-      console.log("response",response?.data[0])
+      console.log("response", response?.data[0]);
     } catch (error) {
       console.error("Error fetching inventory list:", error);
     }
@@ -76,8 +73,8 @@ const index = () => {
       additional: `₹${item?.additional}`,
       total: `₹${item?.total}`,
       status: item?.status,
-      hold_expires_at:item?.hold_expires_at,
-      created_at:item?.created_at,
+      hold_expires_at: item?.hold_expires_at,
+      created_at: item?.created_at,
       booked: item?.status?.toLowerCase() !== "available",
     })) || [];
 
@@ -86,10 +83,7 @@ const index = () => {
     item?.plotNo?.toLowerCase().includes(searchText?.toLowerCase())
   );
 
-
-
   const getAadhaarDetails = async (session_id) => {
-
     const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
     const res = await fetch(
@@ -98,24 +92,22 @@ const index = () => {
     const digilocker_issued_docData = await res.json();
     console.log("Aadhaar document:", digilocker_issued_docData);
 
-
     const responsess = await fetch("/api/xml_to_text", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        fileUrl: digilocker_issued_docData.pan.data.files[0].url
+        fileUrl: digilocker_issued_docData.pan.data.files[0].url,
       }),
     });
 
     const datass = await responsess.json();
     const panKyc = datass.data.Certificate.CertificateData.PAN;
 
-
     const response = await fetch("/api/xml_to_text", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        fileUrl: digilocker_issued_docData.aadhaar.data.files[0].url
+        fileUrl: digilocker_issued_docData.aadhaar.data.files[0].url,
       }),
     });
 
@@ -131,16 +123,16 @@ const index = () => {
       addressEnglish: aadhaarKyc.UidData.Poa.$,
       addressLocal: aadhaarKyc.UidData.LData.$,
       photo: aadhaarKyc.UidData.Pht,
-      panNum: panKyc.$.num
+      panNum: panKyc.$.num,
     };
 
     console.log(userInfo);
-    return userInfo
-  }
+    return userInfo;
+  };
 
   useEffect(() => {
-
     if (session_id) {
+      setLoading(true);
       //  const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
       //   const res = await fetch(
@@ -149,26 +141,24 @@ const index = () => {
       //   const data = await res.json();
       //   console.log("Aadhaar document:", data);
 
-      const bokking_id = localStorage.getItem("booking_id")
-        getAadhaarDetails(session_id).then((Details) => {
-          // Save object as JSON string
-          localStorage.setItem("kyc_Details", JSON.stringify(Details));
-          localStorage.setItem("session_id", session_id);
+      const bokking_id = localStorage.getItem("booking_id");
+      getAadhaarDetails(session_id).then((Details) => {
+        // Save object as JSON string
+        localStorage.setItem("kyc_Details", JSON.stringify(Details));
+        localStorage.setItem("session_id", session_id);
 
-          // Optional: if you want to set state from storage later
-          setKycDetails(Details);
+        // Optional: if you want to set state from storage later
+        setKycDetails(Details);
 
-          const bokking_id = localStorage.getItem("booking_id");
-          router.push(`/properties/${slug}/bookingproperties/${bokking_id}`);
-        });
-
-
+        const bokking_id = localStorage.getItem("booking_id");
+        router.push(`/properties/${slug}/bookingproperties/${bokking_id}`);
+      });
 
       // const Details =  getAadhaarDetails()
       //   console.log("Details::",Details)
       //   setKycDetails(Details)
     }
-  }, [session_id])
+  }, [session_id]);
   return (
     <div className="max-w-screen-2xl mx-auto pb-16 px-6 min-h-screen   md:px-8 lg:px-12 2xl:px-0 ">
       {loading ? (
