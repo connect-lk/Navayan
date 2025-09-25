@@ -67,7 +67,6 @@ const InventoryTable = memo(
 
     const getAadhaarDetails = async (session_id) => {
       const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
-
       const res = await fetch(
         `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
       );
@@ -113,24 +112,21 @@ const InventoryTable = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-    
+      // return  await holdFlatFun(id);
       localStorage.setItem("booking_id", id);
-
-      // const session_id = "a64ece23-43a7-426d-b6b8-aed7148debbb";
       const session_id = localStorage.getItem("session_id");
       const access_token = localStorage.getItem("accessToken");
       setLoadingRow(id);
-     let statusData;
+      let statusData;
       if (session_id && access_token) {
         const statusRes = await fetch(
           `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
         );
-  
+
         statusData = await statusRes.json();
         console.log("Session Status:", statusData);
         const createdAt = statusData?.data?.created_at;
         const updatedAt = statusData?.data?.updated_at;
-        
       }
 
       if (statusData?.sessionExpired || !session_id || statusData?.code == 521 || statusData?.code == 403) {
@@ -150,8 +146,7 @@ const InventoryTable = memo(
 
         if (data.accessToken) {
           localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
-            await holdFlatFun(id);
-           
+          await holdFlatFun(id);
         }
 
         if (data.digiData?.data?.authorization_url) {
@@ -163,9 +158,9 @@ const InventoryTable = memo(
       } else {
         // alert()
 
-         getAadhaarDetails(session_id).then( async(Details) => {
-            await holdFlatFun(id);
-              setLoadingRow(id);
+        getAadhaarDetails(session_id).then(async (Details) => {
+          await holdFlatFun(id);
+          setLoadingRow(id);
 
           // Save object as JSON string
           localStorage.setItem("kyc_Details", JSON.stringify(Details));

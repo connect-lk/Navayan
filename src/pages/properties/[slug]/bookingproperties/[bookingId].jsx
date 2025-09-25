@@ -64,13 +64,13 @@ export default function page() {
     const kyc = data.data.Certificate.CertificateData.KycRes;
 
     const userInfo = {
-      uid: kyc.UidData.$.uid,
-      name: kyc.UidData.Poi.$.name,
-      dob: kyc.UidData.Poi.$.dob,
-      gender: kyc.UidData.Poi.$.gender,
-      addressEnglish: kyc.UidData.Poa.$,
-      addressLocal: kyc.UidData.LData.$,
-      photo: kyc.UidData.Pht,
+      uid: kyc?.UidData.$.uid,
+      name: kyc?.UidData.Poi.$.name,
+      dob: kyc?.UidData.Poi.$.dob,
+      gender: kyc?.UidData.Poi.$.gender,
+      addressEnglish: kyc?.UidData.Poa.$,
+      addressLocal: kyc?.UidData.LData.$,
+      photo: kyc?.UidData.Pht,
     };
 
     // console.log(userInfo);
