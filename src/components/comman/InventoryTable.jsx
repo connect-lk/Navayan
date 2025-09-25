@@ -45,7 +45,6 @@ const InventoryTable = memo(
 
     const getAadhaarDetails = async (session_id) => {
       const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
-
       const res = await fetch(
         `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
       );
@@ -89,10 +88,8 @@ const InventoryTable = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-      // await holdFlatFun(id);
+      // return  await holdFlatFun(id);
       localStorage.setItem("booking_id", id);
-
-      // const session_id = "a64ece23-43a7-426d-b6b8-aed7148debbb";
       const session_id = localStorage.getItem("session_id");
       const access_token = localStorage.getItem("accessToken");
       setLoadingRow(id);
