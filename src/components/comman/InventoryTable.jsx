@@ -119,22 +119,22 @@ const InventoryTable = memo(
       // const session_id = "a64ece23-43a7-426d-b6b8-aed7148debbb";
       const session_id = localStorage.getItem("session_id");
       const access_token = localStorage.getItem("accessToken");
- setLoadingRow(id);
+      setLoadingRow(id);
      let statusData;
       if (session_id && access_token) {
         const statusRes = await fetch(
           `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
         );
   
-        const statusData = await statusRes.json();
+        statusData = await statusRes.json();
         console.log("Session Status:", statusData);
         const createdAt = statusData?.data?.created_at;
         const updatedAt = statusData?.data?.updated_at;
         
       }
 
-      if (statusData?.sessionExpired || !session_id) {
-        alert("d,jsahfjdasgfjh")
+      if (statusData?.sessionExpired || !session_id || statusData?.code == 521) {
+        // alert("d,jsahfjdasgfjh")
         const res = await fetch("/api/digilocker", {
           method: "POST",
           headers: {
