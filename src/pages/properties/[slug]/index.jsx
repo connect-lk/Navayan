@@ -16,6 +16,7 @@ const index = () => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(false);
   const { session_id } = router.query; // dynamically get session_id
+  // console.log("project",project?.id)
   const fetchProject = async () => {
     if (!slug) return;
     try {
@@ -35,9 +36,8 @@ const index = () => {
 
   const InventoryListApiFun = async () => {
     try {
-      const response = await AllPages.inventoryList(41);
+      const response = await AllPages.inventoryList(project?.id);
       setInventoryList(response?.data);
-      console.log("response", response?.data[0]);
     } catch (error) {
       console.error("Error fetching inventory list:", error);
     }
@@ -45,7 +45,7 @@ const index = () => {
 
   useEffect(() => {
     InventoryListApiFun();
-  }, []);
+  }, [project?.id]);
 
   const holdFlatFun = async (id) => {
     try {
@@ -55,7 +55,6 @@ const index = () => {
       console.error("Error holding flat:", error.message);
     }
   };
-
   const tableData =
     inventoryList?.map((item, index) => ({
       id: item?.id,
@@ -71,7 +70,7 @@ const index = () => {
       west: item?.west,
       withPlc: `₹${item?.with_plc}`,
       additional: `₹${item?.additional}`,
-      total: `₹${item?.total}`,
+      total: item?.total,
       status: item?.status,
       hold_expires_at: item?.hold_expires_at,
       created_at: item?.created_at,
@@ -83,14 +82,28 @@ const index = () => {
     item?.plotNo?.toLowerCase().includes(searchText?.toLowerCase())
   );
 
+  const now = new Date();
+
+  const holdCount = tableData
+    ?.map((item) => item?.hold_expires_at) // dates array
+    ?.filter((dateStr) => {
+      if (!dateStr) return false; // ignore null
+      const date = new Date(dateStr.replace(" ", "T")); // parse date
+      return date > now; // only future dates
+    })?.length;
+
+  // booked count
+  const bookedCount = tableData?.filter((item) => item?.booked)?.length;
+
+  // hold count
+
   const getAadhaarDetails = async (session_id) => {
     const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
     const res = await fetch(
       `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
     );
-    const digilocker_issued_docData = await res.json();
-    console.log("Aadhaar document:", digilocker_issued_docData);
+    const digilocker_issued_docData = await res.json(); 
 
     const responsess = await fetch("/api/xml_to_text", {
       method: "POST",
@@ -111,8 +124,7 @@ const index = () => {
       }),
     });
 
-    const data = await response.json();
-    // console.log("Parsed XML object:", data.data);
+    const data = await response.json(); 
     const aadhaarKyc = data.data.Certificate.CertificateData.KycRes;
 
     const userInfo = {
@@ -125,8 +137,7 @@ const index = () => {
       photo: aadhaarKyc.UidData.Pht,
       panNum: panKyc.$.num,
     };
-
-    console.log(userInfo);
+ 
     return userInfo;
   };
 
@@ -148,15 +159,12 @@ const index = () => {
         localStorage.setItem("session_id", session_id);
 
         // Optional: if you want to set state from storage later
-        setKycDetails(Details);
-
+        setKycDetails(Details); 
         const bokking_id = localStorage.getItem("booking_id");
         router.push(`/properties/${slug}/bookingproperties/${bokking_id}`);
       });
 
-      // const Details =  getAadhaarDetails()
-      //   console.log("Details::",Details)
-      //   setKycDetails(Details)
+ 
     }
   }, [session_id]);
   return (
@@ -179,8 +187,8 @@ const index = () => {
                 projectName={project?.title?.rendered}
                 total={project?.flats_available?.total}
                 available={project?.flats_available?.available}
-                onHold={project?.flats_available?.hold}
-                booked={project?.flats_available?.booked}
+                onHold={holdCount}
+                booked={bookedCount}
                 slug={project?.slug}
               />
             </div>

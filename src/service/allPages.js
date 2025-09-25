@@ -3,7 +3,6 @@ let propertiesCache = null;
 
 const AllPages = {
   properties: async () => {
-
     if (propertiesCache) {
       return propertiesCache;
     }
@@ -39,14 +38,14 @@ const AllPages = {
   },
 
   holdFlat: async (id) => {
-    try { 
+    try {
       const res = await requests.post(`/hold?property_id=41&plot_no=${id}`);
-        if (res.status) {
-        console.log("Flat held successfully:", res.data); 
+      if (res.status) {
+        console.log("Flat held successfully:", res.data);
       } else {
-        console.error("Failed to hold flat:", res.data, "Code:", res.code); 
+        console.error("Failed to hold flat:", res.data, "Code:", res.code);
       }
-       return res; // ✅ always return data
+      return res; // ✅ always return data
     } catch (error) {
       console.error(
         "Error fetching property detail:",
@@ -56,14 +55,26 @@ const AllPages = {
     }
   },
 
-  bookFlat: async (id) => {
+  reviewApplication: async (property_id, plot_no) => {
     try {
-      const res = await requests.post(`/book_flat?flat_id=${id}`);
-      if (res.status) {
-        console.log("Flat held successfully:", res.data);
-      } else {
-        console.error("Failed to hold flat:", res.data, "Code:", res.code);
-      }
+      const timestamp = new Date().getTime(); // cache-busting
+      return await requests.get(
+        `/review_application?property_id=${property_id}&plot_no=${plot_no}&t=${timestamp}`
+      );
+    } catch (error) {
+      console.error(
+        "Error fetching property detail:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+  bookedStatusUpdate: async (property_id, plot_no) => {
+    try {
+      const timestamp = new Date().getTime(); // cache-busting
+      return await requests.post(
+        `/final_payment?property_id=${property_id}&plot_no=${plot_no}&t=${timestamp}`
+      );
     } catch (error) {
       console.error(
         "Error fetching property detail:",
