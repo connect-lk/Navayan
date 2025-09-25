@@ -4,19 +4,17 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { applicantFields } from "../../data.js";
 import { coApplicantFields } from "../../data.js";
-import { applicantAutoFillData } from "../../data.js";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
-import { useRouter } from "next/router";
+import Link from "next/link.js";
 
-// const initialValues = {};
-// [...applicantFields, ...coApplicantFields].forEach((field) => {
-//   initialValues[field.name] = "";
-// });
-// initialValues["termsAccepted"] = false;
-
-const KYCForm = ({ handleNextStep, tableData, kycDetails, bookingId }) => {
-  console.log("tableData", tableData[0]);
-  // console.log("bookingId",bookingId);
+const KYCForm = ({
+  handleNextStep,
+  tableData,
+  kycDetails,
+  bookingId,
+  allKycDetails,
+  reviewApplication,
+}) => {
   const buildValidationSchema = () => {
     const schemaShape = {};
     [...applicantFields, ...coApplicantFields].forEach((field) => {
@@ -45,42 +43,69 @@ const KYCForm = ({ handleNextStep, tableData, kycDetails, bookingId }) => {
     kycDetails?.addressEnglish?.country,
     kycDetails?.addressEnglish?.pc,
   ]
-    .filter(Boolean) // removes undefined, null, empty strings
+    .filter(Boolean)
     .join(", ");
 
+  // applicantAutoFillData
   const applicantAutoFillData = {
-    applicantAadhar: kycDetails.uid,
-    applicantAdditionalPhone: "",
-    applicantAddress: applicantAddress,
-    applicantCof: kycDetails.addressEnglish.co,
-    applicantDob: kycDetails.dob,
-    applicantEmail: "",
-    applicantName: kycDetails.name,
-    applicantPan: kycDetails.panNum,
-    applicantPhone: "",
-    applicantProfession: "",
-    applicantPhoto: kycDetails?.photo,
+    applicantAadhar: kycDetails.uid || allKycDetails?.applicantAadhar,
+    applicantAdditionalPhone: allKycDetails?.applicantAdditionalPhone,
+    applicantAddress: applicantAddress || allKycDetails?.applicantAddress,
+    applicantCof: kycDetails.addressEnglish.co || allKycDetails?.applicantCof,
+    applicantDob: kycDetails.dob || allKycDetails?.applicantDob,
+    applicantEmail: allKycDetails?.applicantEmail,
+    applicantName: kycDetails.name || allKycDetails?.applicantName,
+    applicantPan: kycDetails.panNum || allKycDetails?.applicantPan,
+    applicantPhone: allKycDetails?.applicantPhone,
+    applicantProfession: allKycDetails?.applicantProfession,
+    applicantPhoto: kycDetails?.photo || allKycDetails?.applicantPhoto,
+  };
+
+  // coApplicantAutoFillData
+  const coApplicantAutoFillData = {
+    coApplicantAadhar: allKycDetails?.coApplicantAadhar,
+    coApplicantAdditionalPhone: allKycDetails?.coApplicantAdditionalPhone,
+    coApplicantAddress: allKycDetails?.coApplicantAddress,
+    coApplicantCof: allKycDetails?.coApplicantCof,
+    coApplicantDob: allKycDetails?.coApplicantDob,
+    coApplicantEmail: allKycDetails?.coApplicantEmail,
+    coApplicantName: allKycDetails?.coApplicantName,
+    coApplicantPan: allKycDetails?.coApplicantPan,
+    coApplicantPhone: allKycDetails?.coApplicantPhone,
+    coApplicantProfession: allKycDetails?.coApplicantProfession,
   };
 
   const initialValues = {};
-  [...applicantFields, ...coApplicantFields].forEach((field) => {
-    if (applicantAutoFillData?.hasOwnProperty(field?.name)) {
-      initialValues[field?.name] = applicantAutoFillData[field?.name];
+  // applicantFields fields
+  applicantFields.forEach((field) => {
+    if (applicantAutoFillData.hasOwnProperty(field?.name)) {
+      initialValues[field.name] = applicantAutoFillData[field.name];
+    } else {
+      initialValues[field.name] = "";
+    }
+  });
+
+  // Co-applicant fields
+  coApplicantFields.forEach((field) => {
+    if (coApplicantAutoFillData.hasOwnProperty(field?.name)) {
+      initialValues[field?.name] = coApplicantAutoFillData[field?.name];
     } else {
       initialValues[field?.name] = "";
     }
   });
+
   initialValues["termsAccepted"] = false;
-
   const validationSchema = buildValidationSchema();
-  const router = useRouter();
 
+  // generate random BookingId
   function generateBookingId() {
     const randomId = Math.floor(100000 + Math.random() * 900000);
-    return "BK" + randomId.toString(); // Prefix with BK and make it string
+    return "BK" + randomId.toString();
   }
 
+  // KYC handleSubmit form
   const handleSubmit = async (values) => {
+    console.log("values", values);
     try {
       const res = await fetch(
         "https://book.neotericproperties.in/wp-json/wp/v2/book_flat",
@@ -100,7 +125,8 @@ const KYCForm = ({ handleNextStep, tableData, kycDetails, bookingId }) => {
       );
 
       const data = await res.json();
-      if (data.success) {
+      if (data?.success) {
+        reviewApplication();
         console.log("Booking & KYC saved:", data.data);
       } else {
         console.error("Failed:", data.message || data);
@@ -109,7 +135,7 @@ const KYCForm = ({ handleNextStep, tableData, kycDetails, bookingId }) => {
       console.error("Error submitting booking:", error);
     }
 
-    // handleNextStep(3);
+    handleNextStep(3);
   };
 
   return (
@@ -117,11 +143,12 @@ const KYCForm = ({ handleNextStep, tableData, kycDetails, bookingId }) => {
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
+        enableReinitialize={true}
         onSubmit={handleSubmit}
       >
-        {({ errors, touched }) => (
+        {({ errors, touched, values }) => (
           <Form className="bg-white rounded-xl shadow-md 2xl:p-10 lg:p-6 md:p-4 p-2">
-            <div className="bg-white  p-8">
+            <div className="bg-white  p-4">
               <div className="flex justify-between items-center ">
                 <h2 className="md:text-center text-center justify-center text-gray-800 md:text-3xl text-2xl font-bold md:mt-0 mt-4 mb-3 leading-9 flex-grow">
                   Complete Your KYC
@@ -217,19 +244,19 @@ const KYCForm = ({ handleNextStep, tableData, kycDetails, bookingId }) => {
                     Properties using them for my property booking. I also
                     confirm my Co-Applicant's consent to share their
                     information. Please refer to our
-                    <a
+                    <Link
                       href="#"
-                      className="text-[#066FA9] hover:underline md:px-0 px-1"
+                      className="text-[#066FA9] hover:underline md:px-1 px-1"
                     >
                       Terms & Conditions
-                    </a>
+                    </Link>
                     and
-                    <a
+                    <Link
                       href="#"
-                      className="text-[#066FA9] hover:underline md:px-0 px-1"
+                      className="text-[#066FA9] hover:underline md:px-1 px-1"
                     >
                       Privacy Policy
-                    </a>
+                    </Link>
                     .
                   </div>
                 </div>

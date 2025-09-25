@@ -1,6 +1,17 @@
-import React from "react";
-import { applicantData } from "../../data";
-const CoApplicantDetails = () => {
+import React from "react"; 
+const CoApplicantDetails = ({ reviewApplicationlist }) => {
+const applicantData = {
+  "Full Name of Applicant"        : reviewApplicationlist?.coApplicantName ?? "Not Data",
+  "C/o of"                        : reviewApplicationlist?.coApplicantCof ?? "Not Data",
+  "Phone No. of Applicant"        : reviewApplicationlist?.coApplicantPhone ?? "Not Data",
+  "Additional No. of Applicant"   : reviewApplicationlist?.coApplicantAdditionalPhone ?? "Not Data",
+  "Email Id of Applicant"         : reviewApplicationlist?.coApplicantEmail ?? "Not Data",
+  "Permanent Address of Applicant": reviewApplicationlist?.coApplicantAddress ?? "Not Data",
+  "Aadhar No. of Applicant"       : reviewApplicationlist?.coApplicantAadhar ?? "Not Data",
+  "PAN No. of Applicant"          : reviewApplicationlist?.coApplicantPan ?? "Not Data",
+  DOB                             : reviewApplicationlist?.coApplicantDob ?? "Not Data",
+  "Profession of Applicant"       : reviewApplicationlist?.coApplicantProfession ?? "Not Data",
+}; 
   return (
     <div className="min-h-auto bg-gray-100 flex items-center justify-center  ">
       <div className="bg-white rounded-xl outline-1 outline-offset-[-1px] outline-gray-200 w-full max-w-screen-2xl mx-auto overflow-hidden">

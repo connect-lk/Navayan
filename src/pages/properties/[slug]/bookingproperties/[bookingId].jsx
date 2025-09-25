@@ -6,7 +6,10 @@ import { KycTableData } from "@/data";
 import { ReviewTableData } from "@/data";
 import KYCForm from "@/components/comman/KYCForm";
 import React, { useEffect, useState } from "react";
-import { HiOutlineArrowSmallRight } from "react-icons/hi2";
+import {
+  HiOutlineArrowSmallRight,
+  HiOutlineArrowSmallLeft,
+} from "react-icons/hi2";
 import { useParams } from "next/navigation";
 import AllPages from "@/service/allPages";
 import { useRouter } from "next/router";
@@ -21,6 +24,8 @@ export default function page() {
   const router = useRouter();
   const { session_id } = router.query; // dynamically get session_id
   const [inventoryItem, setInventoryItem] = useState(null);
+  const [reviewApplicationlist, setReviewApplicationList] = useState({});
+  const [reviewloading, setReviewLoading] = useState(true);
 
   const InventoryListApiFun = async () => {
     try {
@@ -37,12 +42,6 @@ export default function page() {
     }
   };
 
-  useEffect(() => {
-    if (bookingId) {
-      InventoryListApiFun();
-    }
-  }, [bookingId]);
-
   const getAadhaarDetails = async (session_id) => {
     const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
@@ -50,7 +49,7 @@ export default function page() {
       `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
     );
     const digilocker_issued_docData = await res.json();
-    console.log("Aadhaar document:", digilocker_issued_docData);
+    // console.log("Aadhaar document:", digilocker_issued_docData);
 
     const response = await fetch("/api/xml_to_text", {
       method: "POST",
@@ -74,7 +73,7 @@ export default function page() {
       photo: kyc.UidData.Pht,
     };
 
-    console.log(userInfo);
+    // console.log(userInfo);
     return userInfo;
   };
   // useEffect(() => {
@@ -104,7 +103,7 @@ export default function page() {
         {
           id: inventoryItem?.id,
           plotNo: inventoryItem?.plot_no,
-          property_id: inventoryItem?.property_id, 
+          property_id: inventoryItem?.property_id,
           plotSize: `${inventoryItem?.plot_size} sq.ft`,
           plotFacing: inventoryItem?.facing,
           plcSide: inventoryItem?.plc_side,
@@ -115,7 +114,7 @@ export default function page() {
           west: inventoryItem?.west,
           withPlc: `₹${inventoryItem?.with_plc}`,
           additional: `₹${inventoryItem?.additional}`,
-          total: `₹${inventoryItem?.total}`,
+          total: inventoryItem?.total,
           status: inventoryItem?.status,
           hold_expires_at: inventoryItem?.hold_expires_at,
           created_at: inventoryItem?.created_at,
@@ -123,6 +122,56 @@ export default function page() {
         },
       ]
     : [];
+  const reviewApplication = async () => {
+    try {
+      setReviewLoading(false);
+      const response = await AllPages.reviewApplication(
+        tableData[0]?.property_id,
+        bookingId
+      );
+      setReviewApplicationList(response?.data[0]);
+    } catch (error) {
+      console.error("Error fetching inventory list:", error);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const bookedStatusUpdateFun = async () => {
+    try {
+      await AllPages.bookedStatusUpdate(tableData[0]?.property_id, bookingId);
+      InventoryListApiFun();
+    } catch (error) {
+      console.error("Error holding flat:", error.message);
+    }
+  };
+
+  const propertyId = tableData[0]?.property_id;
+
+  const handleNextStep = () => {
+    if (currentStep < 4) {
+      const newStep = currentStep + 1;
+      setCurrentStep(newStep);
+      localStorage.setItem("currentStep", newStep);
+    }
+  };
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      const newStep = currentStep - 1;
+      setCurrentStep(newStep);
+      localStorage.setItem("currentStep", newStep);
+    }
+  };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (bookingId && propertyId) {
+      reviewApplication();
+    }
+  }, [bookingId, propertyId]); // 👈 now stable, avoids infinite calls
 
   useEffect(() => {
     const savedStep = localStorage.getItem("currentStep");
@@ -133,17 +182,11 @@ export default function page() {
     setKycDetails(storedKyc);
   }, []);
 
-  const handleNextStep = () => {
-    if (currentStep < 4) {
-      const newStep = currentStep + 1;
-      setCurrentStep(newStep);
-      localStorage.setItem("currentStep", newStep);
-    }
-  };
-
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [currentStep]);
+    if (bookingId) {
+      InventoryListApiFun();
+    }
+  }, [bookingId]);
 
   const steps = [
     { id: 1, name: "Select Property" },
@@ -151,7 +194,7 @@ export default function page() {
     { id: 3, name: "Review" },
     { id: 4, name: "Payment" },
   ];
-  console.log("kycDetails::::", kycDetails);
+
   const renderContent = () => {
     if (currentStep === 2) {
       return (
@@ -162,32 +205,88 @@ export default function page() {
             loading={loading}
           />
           {kycDetails?.uid && (
-            <KYCForm handleNextStep={handleNextStep} kycDetails={kycDetails} tableData={tableData}  bookingId={bookingId} />
+            <KYCForm
+              handleNextStep={handleNextStep}
+              kycDetails={kycDetails}
+              tableData={tableData}
+              bookingId={bookingId}
+              allKycDetails={reviewApplicationlist}
+              reviewApplication={reviewApplication}
+            />
           )}
         </div>
       );
     } else if (currentStep === 3) {
       return (
-        <div className="">
-          <div className="w-full md:py-6 py-4">
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0 ">
-              Selected Property
-            </h1>
+        <>
+          {reviewloading ? (
+            <div className="flex justify-center items-center w-full h-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
+              <span className="ml-3 text-sm">Loading property...</span>
+            </div>
+          ) : (
+            <div className="">
+              <div className="w-full md:py-6 py-4">
+                <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0 ">
+                  Selected Property
+                </h1>
+              </div>
+              <InventoryTable tableData={tableData} kycTable={"ReviewTable"} />
+              <div className="w-full py-6 md:mt-10 mt-4">
+                <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
+                  Applicant’s Details
+                </h1>
+              </div>
+              <ApplicantDetails reviewApplicationlist={reviewApplicationlist} />
+              <div className="w-full py-6 md:mt-10 mt-4">
+                <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
+                  Co-Applicant’s Details
+                </h1>
+              </div>
+              <CoApplicantDetails
+                reviewApplicationlist={reviewApplicationlist}
+              />
+              <div className="flex justify-between gap-6 items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
+                <button
+                  onClick={handlePreviousStep}
+                  className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
+                >
+                  <span className="transition-transform duration-300 ease-in-out group-hover:-translate-x-1">
+                    <HiOutlineArrowSmallLeft className="text-lg" />
+                  </span>
+                  Back
+                </button>
+                <button
+                  onClick={handleNextStep}
+                  className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
+                >
+                  Proceed
+                  <span className="transition-transform duration-300 ease-in-out group-hover:translate-x-1">
+                    <HiOutlineArrowSmallRight className="text-lg" />
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    } else if (currentStep === 4) {
+      return (
+        <>
+          <div className="text-center h-96 items-center mx-auto w-full flex justify-center text-2xl">
+            Payment Component
           </div>
-          <InventoryTable tableData={tableData} kycTable={"ReviewTable"} />
-          <div className="w-full py-6 md:mt-10 mt-4">
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
-              Applicant’s Details
-            </h1>
-          </div>
-          <ApplicantDetails />
-          <div className="w-full py-6 md:mt-10 mt-4">
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
-              Co-Applicant’s Details
-            </h1>
-          </div>
-          <CoApplicantDetails />
-          <div className="flex justify-center items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
+
+          <div className="flex justify-center gap-6 items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
+            <button
+              onClick={handlePreviousStep}
+              className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
+            >
+              <span className="transition-transform duration-300 ease-in-out group-hover:-translate-x-1">
+                <HiOutlineArrowSmallLeft className="text-lg" />
+              </span>
+              Back
+            </button>
             <button
               onClick={handleNextStep}
               className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
@@ -198,13 +297,7 @@ export default function page() {
               </span>
             </button>
           </div>
-        </div>
-      );
-    } else if (currentStep === 4) {
-      return (
-        <div className="text-center h-96 items-center mx-auto w-full flex justify-center text-2xl">
-          Payment Component
-        </div>
+        </>
       );
     }
 
