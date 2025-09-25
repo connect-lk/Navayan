@@ -50,21 +50,6 @@ const InventoryTable = memo(
       return diff > 0 ? diff : 0;
     };
 
-    // 📌 Book Now
-    // const handleBookNow = useCallback(
-    //   async (plotNo) => {
-    //     try {
-    //       const res = await AllPages.holdFlat(plotNo);
-    //       console.log("API Response:", res);
-    //       InventoryListApiFun();
-    //       router.push(`/properties/${slug}/bookingproperties/${plotNo}`);
-    //     } catch (error) {
-    //       console.error("Booking failed:", error.message);
-    //     }
-    //   },
-    //   [router, slug]
-    // );
-
     const getAadhaarDetails = async (session_id) => {
       const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
       const res = await fetch(
@@ -97,14 +82,14 @@ const InventoryTable = memo(
       const aadhaarKyc = data?.data?.Certificate?.CertificateData.KycRes;
 
       const userInfo = {
-      uid: aadhaarKyc?.UidData?.$?.uid,
-      name: aadhaarKyc?.UidData?.Poi?.$?.name,
-      dob: aadhaarKyc?.UidData?.Poi?.$?.dob,
-      gender: aadhaarKyc?.UidData?.Poi?.$?.gender,
-      addressEnglish: aadhaarKyc?.UidData?.Poa?.$,
-      addressLocal: aadhaarKyc?.UidData?.LData?.$,
-      photo: aadhaarKyc?.UidData?.Pht,
-      panNum: panKyc?.$?.num,
+        uid: aadhaarKyc?.UidData?.$?.uid,
+        name: aadhaarKyc?.UidData?.Poi?.$?.name,
+        dob: aadhaarKyc?.UidData?.Poi?.$?.dob,
+        gender: aadhaarKyc?.UidData?.Poi?.$?.gender,
+        addressEnglish: aadhaarKyc?.UidData?.Poa?.$,
+        addressLocal: aadhaarKyc?.UidData?.LData?.$,
+        photo: aadhaarKyc?.UidData?.Pht,
+        panNum: panKyc?.$?.num,
       };
 
       console.log(userInfo);
@@ -129,7 +114,12 @@ const InventoryTable = memo(
         const updatedAt = statusData?.data?.updated_at;
       }
 
-      if (statusData?.sessionExpired || !session_id || statusData?.code == 521 || statusData?.code == 403) {
+      if (
+        statusData?.sessionExpired ||
+        !session_id ||
+        statusData?.code == 521 ||
+        statusData?.code == 403
+      ) {
         // alert("d,jsahfjdasgfjh")
         const res = await fetch("/api/digilocker", {
           method: "POST",
@@ -169,6 +159,7 @@ const InventoryTable = memo(
         });
       }
     });
+  
     return (
       <div className="bg-white rounded-xl min-h-auto shadow-sm">
         <div className="rounded-xl overflow-hidden bg-gray-100">

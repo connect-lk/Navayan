@@ -6,6 +6,7 @@ import InventoryTable from "@/components/comman/InventoryTable";
 import { bookingData } from "@/data";
 import AllPages from "@/service/allPages";
 import { useRouter } from "next/router";
+import InventoryTable2 from "@/components/comman/InventoryTable2";
 
 const index = () => {
   const [inventoryList, setInventoryList] = useState([]);
@@ -37,15 +38,34 @@ const index = () => {
   const InventoryListApiFun = async () => {
     try {
       const response = await AllPages.inventoryList(project?.id);
-      setInventoryList(response?.data);
+  
+      const tableData =
+        response?.data?.map((item, index) => ({
+          id: item?.id,
+          sn: index + 1,
+          plotNo: item?.plot_no,
+          plotSize: `${item?.plot_size} sq.ft`,
+          plotFacing: item?.facing,
+          plcSide: item?.plc_side,
+          plcPercentage: `${item?.plc_percentage}%`,
+          north: item?.north,
+          south: item?.south,
+          east: item?.east,
+          west: item?.west,
+          withPlc: `₹${item?.with_plc}`,
+          additional: `₹${item?.additional}`,
+          total: item?.total,
+          status: item?.status,
+          hold_expires_at: item?.hold_expires_at,
+          created_at: item?.created_at,
+          booked: item?.status?.toLowerCase() !== "available",
+        })) || [];
+
+      setInventoryList(tableData);
     } catch (error) {
       console.error("Error fetching inventory list:", error);
     }
   };
-
-  useEffect(() => {
-    InventoryListApiFun();
-  }, [project?.id]);
 
   const holdFlatFun = async (id) => {
     try {
@@ -55,36 +75,10 @@ const index = () => {
       console.error("Error holding flat:", error.message);
     }
   };
-  const tableData =
-    inventoryList?.map((item, index) => ({
-      id: item?.id,
-      sn: index + 1,
-      plotNo: item?.plot_no,
-      plotSize: `${item?.plot_size} sq.ft`,
-      plotFacing: item?.facing,
-      plcSide: item?.plc_side,
-      plcPercentage: `${item?.plc_percentage}%`,
-      north: item?.north,
-      south: item?.south,
-      east: item?.east,
-      west: item?.west,
-      withPlc: `₹${item?.with_plc}`,
-      additional: `₹${item?.additional}`,
-      total: item?.total,
-      status: item?.status,
-      hold_expires_at: item?.hold_expires_at,
-      created_at: item?.created_at,
-      booked: item?.status?.toLowerCase() !== "available",
-    })) || [];
-
-  // Filter based on searchText
-  const filteredData = tableData?.filter((item) =>
-    item?.plotNo?.toLowerCase().includes(searchText?.toLowerCase())
-  );
 
   const now = new Date();
 
-  const holdCount = tableData
+  const holdCount = inventoryList
     ?.map((item) => item?.hold_expires_at) // dates array
     ?.filter((dateStr) => {
       if (!dateStr) return false; // ignore null
@@ -93,8 +87,8 @@ const index = () => {
     })?.length;
 
   // booked count
-  const bookedCount = tableData?.filter((item) => item?.booked)?.length;
-
+  const bookedCount = inventoryList?.filter((item) => item?.booked)?.length;
+  const AvailableProperties = inventoryList?.length - (bookedCount + holdCount);
   // hold count
 
   const getAadhaarDetails = async (session_id) => {
@@ -103,7 +97,7 @@ const index = () => {
     const res = await fetch(
       `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
     );
-    const digilocker_issued_docData = await res.json(); 
+    const digilocker_issued_docData = await res.json();
 
     const responsess = await fetch("/api/xml_to_text", {
       method: "POST",
@@ -124,7 +118,7 @@ const index = () => {
       }),
     });
 
-    const data = await response.json(); 
+    const data = await response.json();
     const aadhaarKyc = data?.data?.Certificate?.CertificateData.KycRes;
 
     const userInfo = {
@@ -137,7 +131,7 @@ const index = () => {
       photo: aadhaarKyc?.UidData?.Pht,
       panNum: panKyc?.$?.num,
     };
- 
+
     return userInfo;
   };
 
@@ -159,14 +153,24 @@ const index = () => {
         localStorage.setItem("session_id", session_id);
 
         // Optional: if you want to set state from storage later
-        setKycDetails(Details); 
+        setKycDetails(Details);
         const bokking_id = localStorage.getItem("booking_id");
         router.push(`/properties/${slug}/bookingproperties/${bokking_id}`);
       });
-
- 
     }
   }, [session_id]);
+
+  useEffect(() => {
+    InventoryListApiFun();
+  }, [project?.id]);
+
+  // useEffect(() => {
+  //   const filteredData = inventoryList?.filter((item) =>
+  //     item?.plotNo?.toLowerCase().includes(searchText?.toLowerCase())
+  //   );
+  //   setInventoryList(filteredData);
+  // }, [searchText]);
+ 
   return (
     <div className="max-w-screen-2xl mx-auto pb-16 px-6 min-h-screen   md:px-8 lg:px-12 2xl:px-0 ">
       {loading ? (
@@ -186,7 +190,7 @@ const index = () => {
                 url={project?.acf?.property_image?.url}
                 projectName={project?.title?.rendered}
                 total={project?.flats_available?.total}
-                available={project?.flats_available?.available}
+                available={AvailableProperties}
                 onHold={holdCount}
                 booked={bookedCount}
                 slug={project?.slug}
@@ -213,9 +217,11 @@ const index = () => {
               </div>
             </div>
           </div>
-          <InventoryTable
-            tableData={filteredData}
+          <InventoryTable2
+            tableData={inventoryList}
             holdFlatFun={holdFlatFun}
+            searchText={searchText}
+            setSearchText={setSearchText}
             InventoryListApiFun={InventoryListApiFun}
             slug={slug}
           />
