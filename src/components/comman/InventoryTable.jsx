@@ -78,34 +78,34 @@ const InventoryTable = memo(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fileUrl: digilocker_issued_docData.pan.data.files[0].url,
+          fileUrl: digilocker_issued_docData?.pan?.data?.files[0].url,
         }),
       });
 
       const datass = await responsess.json();
-      const panKyc = datass.data.Certificate.CertificateData.PAN;
+      const panKyc = datass?.data?.Certificate?.CertificateData?.PAN;
 
       const response = await fetch("/api/xml_to_text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fileUrl: digilocker_issued_docData.aadhaar.data.files[0].url,
+          fileUrl: digilocker_issued_docData?.aadhaar?.data?.files[0].url,
         }),
       });
 
       const data = await response.json();
       // console.log("Parsed XML object:", data.data);
-      const aadhaarKyc = data.data.Certificate.CertificateData.KycRes;
+      const aadhaarKyc = data?.data?.Certificate?.CertificateData.KycRes;
 
       const userInfo = {
-        uid: aadhaarKyc.UidData.$.uid,
-        name: aadhaarKyc.UidData.Poi.$.name,
-        dob: aadhaarKyc.UidData.Poi.$.dob,
-        gender: aadhaarKyc.UidData.Poi.$.gender,
-        addressEnglish: aadhaarKyc.UidData.Poa.$,
-        addressLocal: aadhaarKyc.UidData.LData.$,
-        photo: aadhaarKyc.UidData.Pht,
-        panNum: panKyc.$.num,
+      uid: aadhaarKyc?.UidData?.$?.uid,
+      name: aadhaarKyc?.UidData?.Poi?.$?.name,
+      dob: aadhaarKyc?.UidData?.Poi?.$?.dob,
+      gender: aadhaarKyc?.UidData?.Poi?.$?.gender,
+      addressEnglish: aadhaarKyc?.UidData?.Poa?.$,
+      addressLocal: aadhaarKyc?.UidData?.LData?.$,
+      photo: aadhaarKyc?.UidData?.Pht,
+      panNum: panKyc?.$?.num,
       };
 
       console.log(userInfo);
@@ -133,7 +133,7 @@ const InventoryTable = memo(
         
       }
 
-      if (statusData?.sessionExpired || !session_id || statusData?.code == 521) {
+      if (statusData?.sessionExpired || !session_id || statusData?.code == 521 || statusData?.code == 403) {
         // alert("d,jsahfjdasgfjh")
         const res = await fetch("/api/digilocker", {
           method: "POST",
