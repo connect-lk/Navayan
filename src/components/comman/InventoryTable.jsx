@@ -7,7 +7,14 @@ import { MdArrowBackIosNew } from "react-icons/md";
 import AllPages from "@/service/allPages";
 
 const InventoryTable = memo(
-  ({ kycTable, tableData, slug, holdFlatFun, loading }) => {
+  ({
+    kycTable,
+    tableData,
+    slug,
+    holdFlatFun,
+    loading,
+    InventoryListApiFun,
+  }) => {
     const router = useRouter();
 
     const [loadingRow, setLoadingRow] = useState(null);
@@ -43,6 +50,21 @@ const InventoryTable = memo(
       return diff > 0 ? diff : 0;
     };
 
+    // 📌 Book Now
+    // const handleBookNow = useCallback(
+    //   async (plotNo) => {
+    //     try {
+    //       const res = await AllPages.holdFlat(plotNo);
+    //       console.log("API Response:", res);
+    //       InventoryListApiFun();
+    //       router.push(`/properties/${slug}/bookingproperties/${plotNo}`);
+    //     } catch (error) {
+    //       console.error("Booking failed:", error.message);
+    //     }
+    //   },
+    //   [router, slug]
+    // );
+
     const getAadhaarDetails = async (session_id) => {
       const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
       const res = await fetch(
@@ -71,6 +93,7 @@ const InventoryTable = memo(
       });
 
       const data = await response.json();
+      // console.log("Parsed XML object:", data.data);
       const aadhaarKyc = data.data.Certificate.CertificateData.KycRes;
 
       const userInfo = {
@@ -84,6 +107,7 @@ const InventoryTable = memo(
         panNum: panKyc.$.num,
       };
 
+      console.log(userInfo);
       return userInfo;
     };
 
@@ -99,12 +123,19 @@ const InventoryTable = memo(
           `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
         );
 
-        const statusData = await statusRes.json();
+        statusData = await statusRes.json();
+        console.log("Session Status:", statusData);
         const createdAt = statusData?.data?.created_at;
         const updatedAt = statusData?.data?.updated_at;
       }
 
-      if (statusData?.sessionExpired || !session_id) {
+      if (
+        statusData?.sessionExpired ||
+        !session_id ||
+        statusData?.code == 521 ||
+        statusData?.code == 403
+      ) {
+        // alert("d,jsahfjdasgfjh")
         const res = await fetch("/api/digilocker", {
           method: "POST",
           headers: {
@@ -116,6 +147,7 @@ const InventoryTable = memo(
         });
 
         const data = await res.json();
+        console.log("API Response:", data);
 
         if (data.accessToken) {
           localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
@@ -129,10 +161,13 @@ const InventoryTable = memo(
           console.error("No authorization URL found", data);
         }
       } else {
+        // alert()
+
         getAadhaarDetails(session_id).then(async (Details) => {
           await holdFlatFun(id);
           setLoadingRow(id);
 
+          // Save object as JSON string
           localStorage.setItem("kyc_Details", JSON.stringify(Details));
           const bokking_id = localStorage.getItem("booking_id");
           router.push(`/properties/${slug}/bookingproperties/${id}`);
@@ -243,9 +278,7 @@ const InventoryTable = memo(
                         <td className="xl:p-3 p-3 text-center">
                           {row?.additional}
                         </td>
-                        <td className="xl:p-3 p-3 text-center">
-                          ₹{row?.total}
-                        </td>
+                        <td className="xl:p-3 p-3 text-center">{row?.total}</td>
 
                         <td className="xl:p-3 p-3 text-center">
                           {isHoldActive ? (
