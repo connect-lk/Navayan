@@ -55,3 +55,10 @@ input[type="text"]::placeholder {
 .css-1tbggly {
   display: none !important;
 }
+
+.css-qpxlqp {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: inherit;
+}
