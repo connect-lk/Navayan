@@ -14,13 +14,17 @@ const InventoryTable = memo(
     holdFlatFun,
     loading,
     InventoryListApiFun,
+    fetchProject,
   }) => {
     const router = useRouter();
 
     const [loadingRow, setLoadingRow] = useState(null);
+    const [updatedHoldRows, setUpdatedHoldRows] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [now, setNow] = useState(new Date()); // track current time
     const rowsPerPage = 20;
+
+    // console.log("tableData", tableData);
 
     // ✅ Update current time every second
     useEffect(() => {
@@ -97,7 +101,7 @@ const InventoryTable = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-      // return  await holdFlatFun(id);
+      // return await holdFlatFun(id);
       localStorage.setItem("booking_id", id);
       const session_id = localStorage.getItem("session_id");
       const access_token = localStorage.getItem("accessToken");
@@ -159,7 +163,18 @@ const InventoryTable = memo(
         });
       }
     });
-  
+    const handleHoldStatusUpdate = async (propertyId, plotNo) => {
+      try {
+        const response = await AllPages.holdStatusUpdate(propertyId, plotNo);
+        if (response?.success) {
+          await InventoryListApiFun(); // refresh inventory list
+          await fetchProject(true); // force fresh project API
+        }
+      } catch (error) {
+        console.error("Failed to update hold status:", error);
+      }
+    };
+
     return (
       <div className="bg-white rounded-xl min-h-auto shadow-sm">
         <div className="rounded-xl overflow-hidden bg-gray-100">
@@ -232,8 +247,19 @@ const InventoryTable = memo(
                       row?.hold_expires_at,
                       row?.created_at
                     );
-                    const isHoldActive = remainingTime > 0;
 
+                    const isHoldActive = remainingTime > 1;
+
+                    if (
+                      remainingTime === 0 &&
+                      row?.status?.toLowerCase() === "hold" &&
+                      !updatedHoldRows.includes(row?.id) &&
+                      row?.property_id &&
+                      row?.plotNo
+                    ) {
+                      handleHoldStatusUpdate(row.property_id, row.plotNo);
+                      setUpdatedHoldRows((prev) => [...prev, row.id]); // mark as updated
+                    }
                     return (
                       <tr
                         key={index}
@@ -264,7 +290,9 @@ const InventoryTable = memo(
                         <td className="xl:p-3 p-3 text-center">
                           {row?.additional}
                         </td>
-                        <td className="xl:p-3 p-3 text-center">{row?.total}</td>
+                        <td className="xl:p-3 p-3 text-center">
+                          ₹{row?.total}
+                        </td>
 
                         <td className="xl:p-3 p-3 text-center">
                           {isHoldActive ? (
@@ -291,7 +319,7 @@ const InventoryTable = memo(
                             <td className="p-4 text-center bg-white sticky right-0 z-10">
                               <button
                                 onClick={() => handleBookNow(row?.plotNo)}
-                                className={`font-semibold px-4 py-2 text-[14px] flex items-center gap-4 w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${
+                                className={`font-semibold sm:px-4 px-3 sm:py-2 py-1.5 sm:text-[14px] text-[12px] flex items-center gap-4 w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${
                                   row?.booked || isHoldActive
                                     ? "bg-[#D1D5DB] text-[#4B5563] cursor-not-allowed"
                                     : "hover:bg-[#055a87] bg-[#066FA9] text-white cursor-pointer"

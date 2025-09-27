@@ -62,3 +62,6 @@ input[type="text"]::placeholder {
   align-items: center !important;
   width: inherit;
 }
+.report-modal .ant-modal-content {
+    padding: 0 !important;
+}

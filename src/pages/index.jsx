@@ -3,27 +3,27 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { homePageData } from "../data";
 import AllPages from "@/service/allPages";
-const Home = ({ projects: initialProjects = [] }) => {
-  const [projects, setProjects] = useState(initialProjects);
-  const [loading, setLoading] = useState(!initialProjects.length);
+const Home = () => {
+  const [projects, setProjects] = useState();
+  const [loading, setLoading] = useState();
 
   useEffect(() => {
-    if (!initialProjects.length) {
-      const availableProjectApiFun = async () => {
-        try {
-          setLoading(true);
-          const response = await AllPages.properties();
-          setProjects(response || []);
-        } catch (error) {
-          console.error("Error fetching projects:", error);
-          setProjects([]);
-        } finally {
-          setLoading(false);
-        }
-      }; 
-      availableProjectApiFun();
-    }
-  }, [initialProjects.length]);
+    // if (!initialProjects?.length) {
+    const availableProjectApiFun = async () => {
+      try {
+        setLoading(true);
+        const response = await AllPages.properties();
+        setProjects(response || []);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    availableProjectApiFun();
+    console.log("dshfhjdsfbvdhsvfhgfdsaf"); 
+  }, []);
 
   return (
     <div className="max-w-screen-2xl mx-auto pb-16 px-6 md:px-8 lg:px-12 2xl:px-0">

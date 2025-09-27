@@ -101,7 +101,7 @@ const InventoryTable2 = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-      // return  await holdFlatFun(id);
+      return await holdFlatFun(id);
       localStorage.setItem("booking_id", id);
       const session_id = localStorage.getItem("session_id");
       const access_token = localStorage.getItem("accessToken");
@@ -612,17 +612,17 @@ const InventoryTable2 = memo(
       muiTableContainerProps: {
         sx: {
           overflow: "auto",
-          "&::-webkit-scrollbar": { height: "3px" },
+          "&::-webkit-scrollbar": { height: "6px" },
           "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "#066FA9",
+            backgroundColor: "#cbd5e1",
             borderRadius: "20px",
           },
           "&::-webkit-scrollbar-track": {
-            background: "#066FA9",
+            background: "#e5e7eb",
             borderRadius: "20px",
           },
           "-ms-overflow-style": "auto",
-          "scrollbar-width": "thin",
+          "scrollbar-width": "12px",
         },
       },
     });
