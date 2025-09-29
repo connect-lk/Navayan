@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { GrNext } from "react-icons/gr";
 import { MdArrowBackIosNew } from "react-icons/md";
 import AllPages from "@/service/allPages";
+import { toast, ToastContainer } from "react-toastify";
 
 const InventoryTable = memo(
   ({
@@ -154,6 +155,9 @@ const InventoryTable = memo(
         } else {
           setLoadingRow(null);
           console.error("No authorization URL found", data);
+          if (data.error) {
+            toast.error("Something went wrong !")
+          }
         }
       } else {
         // alert()
@@ -171,6 +175,7 @@ const InventoryTable = memo(
     });
     return (
       <div className="bg-white rounded-xl min-h-auto shadow-sm">
+        <ToastContainer/>
         <div className="rounded-xl overflow-hidden bg-gray-100">
           <div className="overflow-x-auto relative">
             <table className="w-full table-auto border-collapse whitespace-nowrap">
