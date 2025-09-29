@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff; 
+  --background: #ffffff;
 }
 
 @theme inline {
@@ -19,7 +19,10 @@
 }
 
 body {
-  background: var(--background); 
+  background: var(--background);
+  font-family: "Inter", sans-serif;
+}
+.Inter {
   font-family: "Inter", sans-serif;
 }
 
@@ -33,15 +36,32 @@ input::placeholder {
 }
 
 input[type="date"]::placeholder {
-  color: #6B7280;
+  color: #6b7280;
   opacity: 1; /* Ensure the color shows */
 }
 input[type="number"]::placeholder {
-  color: #6B7280;
+  color: #6b7280;
   opacity: 1;
 }
 
 input[type="text"]::placeholder {
-  color: #6B7280;
+  color: #6b7280;
   opacity: 1; /* Ensure the color shows */
+}
+
+.css-1p0wbhh {
+  display: none !important;
+}
+.css-1tbggly {
+  display: none !important;
+}
+
+.css-qpxlqp {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: inherit;
+}
+.report-modal .ant-modal-content {
+    padding: 0 !important;
 }

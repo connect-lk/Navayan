@@ -55,7 +55,7 @@ const ProjectCard = memo(
             quality={95}
             priority
             alt={`Image of `}
-            className="w-full xl:h-[240px] h-[200px] rounded-xl object-cover mb-4"
+            className="w-full xl:h-[240px] h-[190px] rounded-xl object-cover mb-4"
           />
         )}
         <h3 className="justify-center text-slate-800 text-xl font-bold leading-normal mb-3">

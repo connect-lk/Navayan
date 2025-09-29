@@ -2,25 +2,22 @@ import requests from "./httpServices";
 let propertiesCache = null;
 
 const AllPages = {
-  properties: async () => {
-    if (propertiesCache) {
-      return propertiesCache;
-    }
-    try {
-      const timestamp = new Date().getTime(); // cache-busting if needed
-      const response = await requests.get(
-        `/properties?acf_format=standard&t=${timestamp}`
-      );
-      propertiesCache = response;
-      return response;
-    } catch (error) {
-      console.error(
-        "Error fetching properties:",
-        error.response?.data || error.message
-      );
-      throw error;
-    }
-  },
+properties: async (force = false) => {
+  if (propertiesCache && !force) {
+    return propertiesCache;
+  }
+  try {
+    const timestamp = new Date().getTime();
+    const response = await requests.get(
+      `/properties?acf_format=standard&t=${timestamp}`
+    );
+    propertiesCache = response;
+    return response;
+  } catch (error) {
+    console.error("Error fetching properties:", error);
+    throw error;
+  }
+},
 
   inventoryList: async (id) => {
     try {
@@ -74,6 +71,20 @@ const AllPages = {
       const timestamp = new Date().getTime(); // cache-busting
       return await requests.post(
         `/final_payment?property_id=${property_id}&plot_no=${plot_no}&t=${timestamp}`
+      );
+    } catch (error) {
+      console.error(
+        "Error fetching property detail:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+  holdStatusUpdate: async (property_id, plot_no) => {
+    try {
+      const timestamp = new Date().getTime(); // cache-busting
+      return await requests.post(
+        `/update_property_status?property_id=${property_id}&plot_no=${plot_no}&t=${timestamp}`
       );
     } catch (error) {
       console.error(

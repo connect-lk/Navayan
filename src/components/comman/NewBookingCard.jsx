@@ -53,7 +53,7 @@ const NewBookingCard = memo(
               quality={95}
               alt={projectName}
               priority
-              className="w-full h-[230px] rounded-xl object-cover"
+              className="w-full h-[190px] rounded-xl object-cover"
             />
           )}
         </div>
