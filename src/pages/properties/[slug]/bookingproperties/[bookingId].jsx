@@ -204,6 +204,14 @@ export default function page() {
             kycTable={"kycTable"}
             loading={loading}
           />
+          <div className="flex items-center justify-center  mt-6  w-full bg-gray-100">
+            <div className="bg-white py-24 rounded-lg shadow-md flex h-full justify-center w-full">
+              <button className="py-3.5 md:px-12 px-4 cursor-pointer  bg-[#066FA9] rounded-lg text-white text-sm font-medium font-['Inter'] leading-tight">
+                Complete Your KYC
+              </button>
+            </div>
+          </div>
+
           {kycDetails?.uid && (
             <KYCForm
               handleNextStep={handleNextStep}
@@ -225,48 +233,55 @@ export default function page() {
               <span className="ml-3 text-sm">Loading property...</span>
             </div>
           ) : (
-            <div className="">
-              <div className="w-full md:py-6 py-4">
-                <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0 ">
-                  Selected Property
-                </h1>
+            <>
+              <div className="">
+                <div className="w-full md:py-6 py-4">
+                  <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0 ">
+                    Selected Property
+                  </h1>
+                </div>
+                <InventoryTable
+                  tableData={tableData}
+                  kycTable={"ReviewTable"}
+                />
+                <div className="w-full py-6 md:mt-10 mt-4">
+                  <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
+                    Applicant’s Details
+                  </h1>
+                </div>
+                <ApplicantDetails
+                  reviewApplicationlist={reviewApplicationlist}
+                />
+                <div className="w-full py-6 md:mt-10 mt-4">
+                  <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
+                    Co-Applicant’s Details
+                  </h1>
+                </div>
+                <CoApplicantDetails
+                  reviewApplicationlist={reviewApplicationlist}
+                />
+                <div className="flex justify-between gap-6 items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
+                  <button
+                    onClick={handlePreviousStep}
+                    className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
+                  >
+                    <span className="transition-transform duration-300 ease-in-out group-hover:-translate-x-1">
+                      <HiOutlineArrowSmallLeft className="text-lg" />
+                    </span>
+                    Back
+                  </button>
+                  <button
+                    onClick={handleNextStep}
+                    className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
+                  >
+                    Proceed
+                    <span className="transition-transform duration-300 ease-in-out group-hover:translate-x-1">
+                      <HiOutlineArrowSmallRight className="text-lg" />
+                    </span>
+                  </button>
+                </div>
               </div>
-              <InventoryTable tableData={tableData} kycTable={"ReviewTable"} />
-              <div className="w-full py-6 md:mt-10 mt-4">
-                <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
-                  Applicant’s Details
-                </h1>
-              </div>
-              <ApplicantDetails reviewApplicationlist={reviewApplicationlist} />
-              <div className="w-full py-6 md:mt-10 mt-4">
-                <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
-                  Co-Applicant’s Details
-                </h1>
-              </div>
-              <CoApplicantDetails
-                reviewApplicationlist={reviewApplicationlist}
-              />
-              <div className="flex justify-between gap-6 items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
-                <button
-                  onClick={handlePreviousStep}
-                  className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
-                >
-                  <span className="transition-transform duration-300 ease-in-out group-hover:-translate-x-1">
-                    <HiOutlineArrowSmallLeft className="text-lg" />
-                  </span>
-                  Back
-                </button>
-                <button
-                  onClick={handleNextStep}
-                  className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
-                >
-                  Proceed
-                  <span className="transition-transform duration-300 ease-in-out group-hover:translate-x-1">
-                    <HiOutlineArrowSmallRight className="text-lg" />
-                  </span>
-                </button>
-              </div>
-            </div>
+            </>
           )}
         </>
       );
