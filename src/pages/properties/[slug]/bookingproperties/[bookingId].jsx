@@ -13,6 +13,7 @@ import {
 import { useParams } from "next/navigation";
 import AllPages from "@/service/allPages";
 import { useRouter } from "next/router";
+import PaymentPlan from "@/components/comman/PaymentPlan";
 
 // Main application component
 export default function page() {
@@ -288,30 +289,9 @@ export default function page() {
     } else if (currentStep === 4) {
       return (
         <>
-          <div className="text-center h-96 items-center mx-auto w-full flex justify-center text-2xl">
-            Payment Component
-          </div>
+         <PaymentPlan handlePreviousStep={handlePreviousStep}/>
 
-          <div className="flex justify-center gap-6 items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
-            <button
-              onClick={handlePreviousStep}
-              className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
-            >
-              <span className="transition-transform duration-300 ease-in-out group-hover:-translate-x-1">
-                <HiOutlineArrowSmallLeft className="text-lg" />
-              </span>
-              Back
-            </button>
-            <button
-              onClick={handleNextStep}
-              className="mt-6 md:w-auto w-full md:mt-0 bg-[#066FA9] text-white cursor-pointer font-semibold py-3 flex text-center justify-center items-center gap-2 px-12 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl group"
-            >
-              Proceed
-              <span className="transition-transform duration-300 ease-in-out group-hover:translate-x-1">
-                <HiOutlineArrowSmallRight className="text-lg" />
-              </span>
-            </button>
-          </div>
+     
         </>
       );
     }
