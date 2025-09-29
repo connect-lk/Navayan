@@ -6,6 +6,7 @@ import { applicantFields } from "../../data.js";
 import { coApplicantFields } from "../../data.js";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 import Link from "next/link.js";
+import { toast } from "react-toastify";
 
 const KYCForm = ({
   handleNextStep,
@@ -128,14 +129,15 @@ const KYCForm = ({
       if (data?.success) {
         reviewApplication();
         console.log("Booking & KYC saved:", data.data);
+        handleNextStep(3);
       } else {
         console.error("Failed:", data.message || data);
+        toast.error(data.message)
       }
     } catch (error) {
       console.error("Error submitting booking:", error);
     }
 
-    handleNextStep(3);
   };
 
   return (

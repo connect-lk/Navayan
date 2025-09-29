@@ -25,10 +25,7 @@
     "react-feather": "^2.0.10",
     "react-icon": "^1.0.0",
     "react-icons": "^5.5.0",
-<<<<<<< HEAD
-=======
     "react-spinners": "^0.17.0",
->>>>>>> abe1e01116c2510c4b70c2cf82fd31c873b53086
     "react-toastify": "^11.0.5",
     "xml2js": "^0.6.2",
     "yup": "^1.7.0"

@@ -17,10 +17,13 @@ import { useRouter } from "next/router";
 // Main application component
 export default function page() {
   const [currentStep, setCurrentStep] = useState(2);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [kycDetails, setKycDetails] = useState({});
   const params = useParams();
   const bookingId = params?.bookingId;
+  const slug = params?.slug;
+  // console.log("slug",slug)
+      const [loadingRow, setLoadingRow] = useState(null);
   const router = useRouter();
   const { session_id } = router.query; // dynamically get session_id
   const [inventoryItem, setInventoryItem] = useState(null);
@@ -29,16 +32,16 @@ export default function page() {
 
   const InventoryListApiFun = async () => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const response = await AllPages.inventoryList(41);
       const data = response?.data || [];
       const matchedItem = data.find((item) => item.id === bookingId);
       setInventoryItem(matchedItem);
     } catch (error) {
       console.error("Error fetching inventory item:", error);
-      setLoading(false);
+      // setLoading(false);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -48,32 +51,47 @@ export default function page() {
     const res = await fetch(
       `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
     );
-    const digilocker_issued_docData = await res.json();
-    // console.log("Aadhaar document:", digilocker_issued_docData);
+    const digilocker_issued_docData = await res.json(); 
 
-    const response = await fetch("/api/xml_to_text", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fileUrl: digilocker_issued_docData.data.files[0].url,
-      }),
-    });
+    let panKyc ;
+    if (digilocker_issued_docData?.pan?.data?.files[0].url) {
+      const responsess = await fetch("/api/xml_to_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileUrl: digilocker_issued_docData?.pan?.data?.files[0].url,
+        }),
+      });
+  
+      const datass = await responsess.json();
+       panKyc = datass?.data?.Certificate?.CertificateData?.PAN;
+    }
 
-    const data = await response.json();
-    // console.log("Parsed XML object:", data.data);
-    const kyc = data.data.Certificate.CertificateData.KycRes;
+    let aadhaarKyc;
+    if (digilocker_issued_docData?.aadhaar?.data?.files[0].url) {
+      const response = await fetch("/api/xml_to_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileUrl: digilocker_issued_docData?.aadhaar?.data?.files[0].url,
+        }),
+      });
+  
+      const data = await response.json(); 
+       aadhaarKyc = data?.data?.Certificate?.CertificateData.KycRes;
+    }
 
     const userInfo = {
-      uid: kyc?.UidData.$.uid,
-      name: kyc?.UidData.Poi.$.name,
-      dob: kyc?.UidData.Poi.$.dob,
-      gender: kyc?.UidData.Poi.$.gender,
-      addressEnglish: kyc?.UidData.Poa.$,
-      addressLocal: kyc?.UidData.LData.$,
-      photo: kyc?.UidData.Pht,
+      uid: aadhaarKyc?.UidData?.$?.uid || "",
+      name: aadhaarKyc?.UidData?.Poi?.$?.name || "",
+      dob: aadhaarKyc?.UidData?.Poi?.$?.dob || "",
+      gender: aadhaarKyc?.UidData?.Poi?.$?.gender || "",
+      addressEnglish: aadhaarKyc?.UidData?.Poa?.$ || "",
+      addressLocal: aadhaarKyc?.UidData?.LData?.$ || "",
+      photo: aadhaarKyc?.UidData?.Pht || "",
+      panNum: panKyc?.$?.num || "",
     };
-
-    // console.log(userInfo);
+ 
     return userInfo;
   };
   // useEffect(() => {
@@ -179,7 +197,9 @@ export default function page() {
       setCurrentStep(parseInt(savedStep, 10));
     }
     const storedKyc = JSON.parse(localStorage.getItem("kyc_Details"));
-    setKycDetails(storedKyc);
+    if (storedKyc) {
+      setKycDetails(storedKyc);
+    }
   }, []);
 
   useEffect(() => {
@@ -188,6 +208,31 @@ export default function page() {
     }
   }, [bookingId]);
 
+
+
+    useEffect(() => {
+      if (session_id) {
+        setLoading(true);
+  // alert()
+        const bokking_id = localStorage.getItem("booking_id");
+        getAadhaarDetails(session_id).then((Details) => {
+          // Save object as JSON string
+          localStorage.setItem("kyc_Details", JSON.stringify(Details));
+          localStorage.setItem("session_id", session_id);
+  
+          // Optional: if you wanft to set state from storage later
+          setKycDetails(Details); 
+          // const bokking_id = localStorage.getItem("booking_id");
+          
+  
+          setLoading(false);
+          router.push(`/properties/${slug}/bookingproperties/${bookingId}`);
+        });
+   
+      }
+    }, [session_id]);
+
+
   const steps = [
     { id: 1, name: "Select Property" },
     { id: 2, name: "KYC" },
@@ -195,33 +240,123 @@ export default function page() {
     { id: 4, name: "Payment" },
   ];
 
+
+  const handle_kyc = async() => {
+          localStorage.setItem("booking_id", bookingId);
+          const session_id = localStorage.getItem("session_id");
+          const access_token = localStorage.getItem("accessToken");
+          let statusData;
+          if (session_id && access_token) {
+            const statusRes = await fetch(
+              `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
+            );
+    
+            statusData = await statusRes.json();
+            console.log("Session Status:", statusData);
+            // const createdAt = statusData?.data?.created_at;
+            // const updatedAt = statusData?.data?.updated_at;
+          }
+    
+          if (
+            statusData?.sessionExpired ||
+            !session_id ||
+            statusData?.code == 521 ||
+            statusData?.code == 403
+          ) {
+            // alert("d,jsahfjdasgfjh")
+            const res = await fetch("/api/digilocker", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                slug,
+                bookingId
+              }),
+            });
+    
+            const data = await res.json();
+            console.log("API Response:", data);
+    
+            if (data.accessToken) {
+              localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
+            }
+    
+            if (data.digiData?.data?.authorization_url) {
+              window.location.href = data.digiData.data.authorization_url; // redirect user
+            } else {
+              setLoadingRow(null);
+              console.error("No authorization URL found", data);
+              if (data.error) {
+                toast.error("Something went wrong !")
+              }
+            }
+          } else {
+            // alert()
+    
+            getAadhaarDetails(session_id).then(async (Details) => {
+              setLoadingRow(id);
+    
+              // Save object as JSON string
+              localStorage.setItem("kyc_Details", JSON.stringify(Details));
+
+              setKycDetails(Details);
+              // const bokking_id = localStorage.getItem("booking_id");
+              // router.push(`/properties/${slug}/bookingproperties/${id}`);
+            });
+          }
+  }
+
+
+  // useEffect(() => {
+  //   const 
+  // }, [])
+  
+
   const renderContent = () => {
+
     if (currentStep === 2) {
       return (
         <div className=" ">
+
           <InventoryTable
             tableData={tableData}
             kycTable={"kycTable"}
-            loading={loading}
+            // loading={loading}
+            InventoryListApiFun={InventoryListApiFun}
           />
-          <div className="flex items-center justify-center  mt-6  w-full bg-gray-100">
-            <div className="bg-white py-24 rounded-lg shadow-md flex h-full justify-center w-full">
-              <button className="py-3.5 md:px-12 px-4 cursor-pointer  bg-[#066FA9] rounded-lg text-white text-sm font-medium font-['Inter'] leading-tight">
-                Complete Your KYC
-              </button>
-            </div>
-          </div>
 
-          {kycDetails?.uid && (
-            <KYCForm
-              handleNextStep={handleNextStep}
-              kycDetails={kycDetails}
-              tableData={tableData}
-              bookingId={bookingId}
-              allKycDetails={reviewApplicationlist}
-              reviewApplication={reviewApplication}
-            />
-          )}
+          
+          {
+            !loading ? (
+              
+            kycDetails?.uid ? (
+              <KYCForm
+                handleNextStep={handleNextStep}
+                kycDetails={kycDetails}
+                tableData={tableData}
+                bookingId={bookingId}
+                allKycDetails={reviewApplicationlist}
+                reviewApplication={reviewApplication}
+              />
+            ):(
+              <div className="flex items-center justify-center  mt-6  w-full bg-gray-100">
+              <div className="bg-white py-24 rounded-lg shadow-md flex h-full justify-center w-full">
+                <button className="py-3.5 md:px-12 px-4 cursor-pointer  bg-[#066FA9] rounded-lg text-white text-sm font-medium font-['Inter'] leading-tight" onClick={handle_kyc}>
+                  Complete Your KYC
+                </button>
+              </div>
+            </div>
+            )
+          ) :(
+            <div className="flex justify-center items-center w-full h-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
+              <span className="ml-3 text-sm">Loading kyc...</span>
+            </div>
+          )
+          
+          
+          }
         </div>
       );
     } else if (currentStep === 3) {
