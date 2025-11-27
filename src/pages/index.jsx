@@ -22,7 +22,6 @@ const Home = () => {
       }
     };
     availableProjectApiFun();
-    console.log("dshfhjdsfbvdhsvfhgfdsaf"); 
   }, []);
 
   return (

@@ -63,5 +63,5 @@ input[type="text"]::placeholder {
   width: inherit;
 }
 .report-modal .ant-modal-content {
-    padding: 0 !important;
+  padding: 0 !important;
 }

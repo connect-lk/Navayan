@@ -45,22 +45,20 @@ const KYCForm = ({
   ]
     .filter(Boolean)
     .join(", ");
-
   // applicantAutoFillData
   const applicantAutoFillData = {
-    applicantAadhar: kycDetails.uid || allKycDetails?.applicantAadhar,
+    applicantAadhar: kycDetails?.uid || allKycDetails?.applicantAadhar,
     applicantAdditionalPhone: allKycDetails?.applicantAdditionalPhone,
     applicantAddress: applicantAddress || allKycDetails?.applicantAddress,
-    applicantCof: kycDetails.addressEnglish.co || allKycDetails?.applicantCof,
-    applicantDob: kycDetails.dob || allKycDetails?.applicantDob,
+    applicantCof: kycDetails?.addressEnglish?.co || allKycDetails?.applicantCof,
+    applicantDob: kycDetails?.dob || allKycDetails?.applicantDob,
     applicantEmail: allKycDetails?.applicantEmail,
-    applicantName: kycDetails.name || allKycDetails?.applicantName,
-    applicantPan: kycDetails.panNum || allKycDetails?.applicantPan,
+    applicantName: kycDetails?.name || allKycDetails?.applicantName,
+    applicantPan: kycDetails?.panNum || allKycDetails?.applicantPan,
     applicantPhone: allKycDetails?.applicantPhone,
     applicantProfession: allKycDetails?.applicantProfession,
     applicantPhoto: kycDetails?.photo || allKycDetails?.applicantPhoto,
   };
-
   // coApplicantAutoFillData
   const coApplicantAutoFillData = {
     coApplicantAadhar: allKycDetails?.coApplicantAadhar,
@@ -74,17 +72,15 @@ const KYCForm = ({
     coApplicantPhone: allKycDetails?.coApplicantPhone,
     coApplicantProfession: allKycDetails?.coApplicantProfession,
   };
-
   const initialValues = {};
   // applicantFields fields
   applicantFields.forEach((field) => {
     if (applicantAutoFillData.hasOwnProperty(field?.name)) {
-      initialValues[field.name] = applicantAutoFillData[field.name];
+      initialValues[field?.name] = applicantAutoFillData[field?.name];
     } else {
-      initialValues[field.name] = "";
+      initialValues[field?.name] = "";
     }
   });
-
   // Co-applicant fields
   coApplicantFields.forEach((field) => {
     if (coApplicantAutoFillData.hasOwnProperty(field?.name)) {
@@ -127,7 +123,7 @@ const KYCForm = ({
       const data = await res.json();
       if (data?.success) {
         reviewApplication();
-        console.log("Booking & KYC saved:", data.data);
+        console.log("Booking & KYC saved:", data?.data);
       } else {
         console.error("Failed:", data.message || data);
       }

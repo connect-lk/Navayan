@@ -12,13 +12,15 @@ const nextConfig = {
     },
   },
   images: {
-    qualities: [75, 85, 95,100], // Allowed quality values
+    qualities: [75, 85, 95, 100], // Allowed quality values
+    domains: ["book.neotericproperties.in", "neotericproperties.in"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'neotericproperties.in',
+      },
+    ],
   },
-  images: {
-    domains: ["book.neotericproperties.in"],
-  },
-  reactStrictMode: true,
-  swcMinify: true, // faster minification
 };
 
 // Use ESM export
