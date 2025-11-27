@@ -11,6 +11,7 @@ const nextConfig = {
             ],
         },
     },
+<<<<<<< HEAD
     images: {
         qualities: [75, 85, 95, 100], // Allowed quality values
     },
@@ -19,6 +20,19 @@ const nextConfig = {
     },
     reactStrictMode: true,
     swcMinify: true, // faster minification
+=======
+  },
+  images: {
+    qualities: [75, 85, 95, 100], // Allowed quality values
+    domains: ["book.neotericproperties.in", "neotericproperties.in"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'neotericproperties.in',
+      },
+    ],
+  },
+>>>>>>> 8dd3bac0d60ddb092da628cb6bd95d47343ea8c3
 };
 
 // Use ESM export

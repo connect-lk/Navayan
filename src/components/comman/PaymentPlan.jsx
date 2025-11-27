@@ -264,13 +264,13 @@ const PaymentPlan = ({ handlePreviousStep }) => {
 
         {/* Payment Plan Cards */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {paymentPlans.map((plan) => {
-            const isSelected = selectedPlanId === plan.id;
-            const planAmount = (MOCK_TOTAL_AMOUNT * plan.percentage) / 100;
+          {paymentPlans?.map((plan) => {
+            const isSelected = selectedPlanId === plan?.id;
+            const planAmount = (MOCK_TOTAL_AMOUNT * plan?.percentage) / 100;
 
             return (
               <div
-                key={plan.id}
+                key={plan?.id}
                 className={`p-4 sm:p-5 border rounded-xl cursor-pointer transition-all duration-300 flex flex-col justify-between hover:shadow-lg ${
                   isSelected ? "border-[2px]" : "border"
                 }`}
@@ -278,14 +278,14 @@ const PaymentPlan = ({ handlePreviousStep }) => {
                   borderColor: isSelected ? THEME_COLOR : "#e5e7eb",
                   backgroundColor: isSelected ? "#f0f9ff" : "white",
                 }}
-                onClick={() => setSelectedPlanId(plan.id)}
+                onClick={() => setSelectedPlanId(plan?.id)}
               >
                 <div>
                   <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 text-gray-800">
-                    {plan.name}
+                    {plan?.name}
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-4">
-                    {plan.description}
+                    {plan?.description}
                   </p>
                 </div>
                 <div>
@@ -331,7 +331,7 @@ const PaymentPlan = ({ handlePreviousStep }) => {
             </button>
             <div className="flex items-center gap-6">
               <button
-               onClick={() => setIsModalOpen(true)}
+                onClick={() => setIsModalOpen(true)}
                 style={{ backgroundColor: THEME_COLOR }}
                 className="w-full sm:w-auto bg-[#066FA9] text-white cursor-pointer font-semibold py-2.5 sm:py-3 px-8 sm:px-12 rounded-lg shadow-lg transition-all capitalize duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl flex justify-center items-center gap-2 group disabled:opacity-50"
               >
@@ -341,7 +341,7 @@ const PaymentPlan = ({ handlePreviousStep }) => {
                 </span>
               </button>
               <button
-                onClick={handlePayNow}
+                onClick={handlePayNow} 
                 disabled={!selectedPlanId}
                 style={{ backgroundColor: THEME_COLOR }}
                 className="w-full sm:w-auto bg-[#066FA9] text-white cursor-pointer font-semibold py-2.5 sm:py-3 px-8 sm:px-12 rounded-lg shadow-lg transition-all capitalize duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl flex justify-center items-center gap-2 group disabled:opacity-50"

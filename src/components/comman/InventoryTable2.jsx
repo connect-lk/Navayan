@@ -7,9 +7,6 @@ import {
   useMaterialReactTable,
   createMRTColumnHelper,
 } from "material-react-table";
-import { Box, Button } from "@mui/material";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import { mkConfig, generateCsv, download } from "export-to-csv";
 
 const InventoryTable2 = memo(
   ({
@@ -25,14 +22,11 @@ const InventoryTable2 = memo(
     const [loadingRow, setLoadingRow] = useState(null);
     const [now, setNow] = useState(new Date());
 
-    // console.log("searchText",searchText)
-    // auto update for timers
     useEffect(() => {
       const interval = setInterval(() => setNow(new Date()), 1000);
       return () => clearInterval(interval);
     }, []);
 
-    // format mm:ss
     const formatTime = (seconds) => {
       const m = Math.floor(seconds / 60)
         .toString()
@@ -48,14 +42,13 @@ const InventoryTable2 = memo(
       return diff > 0 ? diff : 0;
     };
 
-    // ✅ Update current time every second
     useEffect(() => {
       const interval = setInterval(() => setNow(new Date()), 1000);
       return () => clearInterval(interval);
     }, []);
 
     const getAadhaarDetails = async (session_id) => {
-      const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+      const access_token = localStorage.getItem("accessToken");
       const res = await fetch(
         `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
       );
@@ -82,7 +75,6 @@ const InventoryTable2 = memo(
       });
 
       const data = await response.json();
-      // console.log("Parsed XML object:", data.data);
       const aadhaarKyc = data?.data?.Certificate?.CertificateData.KycRes;
 
       const userInfo = {
@@ -101,7 +93,6 @@ const InventoryTable2 = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-      return await holdFlatFun(id);
       localStorage.setItem("booking_id", id);
       const session_id = localStorage.getItem("session_id");
       const access_token = localStorage.getItem("accessToken");
@@ -124,7 +115,6 @@ const InventoryTable2 = memo(
         statusData?.code == 521 ||
         statusData?.code == 403
       ) {
-        // alert("d,jsahfjdasgfjh")
         const res = await fetch("/api/digilocker", {
           method: "POST",
           headers: {
@@ -139,24 +129,21 @@ const InventoryTable2 = memo(
         console.log("API Response:", data);
 
         if (data.accessToken) {
-          localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
+          localStorage.setItem("accessToken", data.accessToken);
           await holdFlatFun(id);
         }
 
         if (data.digiData?.data?.authorization_url) {
-          window.location.href = data.digiData.data.authorization_url; // redirect user
+          window.location.href = data.digiData.data.authorization_url;
         } else {
           setLoadingRow(null);
           console.error("No authorization URL found", data);
         }
       } else {
-        // alert()
-
         getAadhaarDetails(session_id).then(async (Details) => {
           await holdFlatFun(id);
           setLoadingRow(id);
 
-          // Save object as JSON string
           localStorage.setItem("kyc_Details", JSON.stringify(Details));
           const bokking_id = localStorage.getItem("booking_id");
           router.push(`/properties/${slug}/bookingproperties/${id}`);
@@ -176,7 +163,6 @@ const InventoryTable2 = memo(
     //   [holdFlatFun, router, slug]
     // );
 
-    // MaterialReactTable columns
     const columnHelper = createMRTColumnHelper();
     const columns = [
       columnHelper.accessor("plotNo", {
@@ -225,11 +211,6 @@ const InventoryTable2 = memo(
             color: "#6B7280",
           },
         },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
-          },
-        },
         Cell: ({ cell }) => (
           <span className=" pl-1 py-2 text-[15px] Inter text-gray-600">
             {cell.getValue() || "Not Data"}
@@ -246,11 +227,6 @@ const InventoryTable2 = memo(
             paddingBottom: "18px",
             fontFamily: "Inter",
             color: "#6B7280",
-          },
-        },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
           },
         },
         Cell: ({ cell }) => (
@@ -271,11 +247,6 @@ const InventoryTable2 = memo(
             color: "#6B7280",
           },
         },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
-          },
-        },
         Cell: ({ cell }) => (
           <span className=" pl-1 py-2 text-[15px] Inter text-gray-600">
             {cell.getValue() || "Not Data"}
@@ -292,11 +263,6 @@ const InventoryTable2 = memo(
             paddingBottom: "18px",
             fontFamily: "Inter",
             color: "#6B7280",
-          },
-        },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
           },
         },
         Cell: ({ cell }) => (
@@ -317,11 +283,6 @@ const InventoryTable2 = memo(
             color: "#6B7280",
           },
         },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
-          },
-        },
         Cell: ({ cell }) => (
           <span className=" pl-1 py-2 text-[15px] Inter text-gray-600">
             {cell.getValue() || "Not Data"}
@@ -338,11 +299,6 @@ const InventoryTable2 = memo(
             paddingBottom: "18px",
             fontFamily: "Inter",
             color: "#6B7280",
-          },
-        },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
           },
         },
         Cell: ({ cell }) => (
@@ -363,11 +319,6 @@ const InventoryTable2 = memo(
             color: "#6B7280",
           },
         },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
-          },
-        },
         Cell: ({ cell }) => (
           <span className=" pl-1 py-2 text-[15px] Inter text-gray-600">
             {cell.getValue() || "Not Data"}
@@ -384,11 +335,6 @@ const InventoryTable2 = memo(
             paddingBottom: "18px",
             fontFamily: "Inter",
             color: "#6B7280",
-          },
-        },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
           },
         },
         Cell: ({ cell }) => (
@@ -409,11 +355,6 @@ const InventoryTable2 = memo(
             color: "#6B7280",
           },
         },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
-          },
-        },
         Cell: ({ cell }) => (
           <span className=" pl-1 py-2 text-[15px] Inter text-gray-600">
             {cell.getValue() || "Not Data"}
@@ -432,11 +373,6 @@ const InventoryTable2 = memo(
             color: "#6B7280",
           },
         },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
-          },
-        },
         Cell: ({ cell }) => (
           <span className=" pl-1 py-2 text-[15px] Inter text-gray-600">
             {cell.getValue() || "Not Data"}
@@ -453,11 +389,6 @@ const InventoryTable2 = memo(
             paddingBottom: "18px",
             fontFamily: "Inter",
             color: "#6B7280",
-          },
-        },
-        muiTableBodyCellProps: {
-          sx: {
-            // padding: "0.75rem",
           },
         },
         Cell: ({ cell }) => (
@@ -531,8 +462,6 @@ const InventoryTable2 = memo(
                   right: 0,
                   zIndex: 1,
                   background: "white",
-                  //   padding: "0.75rem",
-                  //
                 },
               },
               Cell: ({ row }) => {
@@ -579,8 +508,8 @@ const InventoryTable2 = memo(
       columnFilterDisplayMode: "popover",
       paginationDisplayMode: "pages",
       positionToolbarAlertBanner: "bottom",
-      enableGlobalFilter: true, // enable global filter
-      globalFilterFn: "includesString", // built‑in filter fn
+      enableGlobalFilter: true,
+      globalFilterFn: "includesString",
       onGlobalFilterChange: setSearchText,
       state: { globalFilter: searchText },
       initialState: {
@@ -592,7 +521,6 @@ const InventoryTable2 = memo(
         elevation: 0,
         sx: {
           borderRadius: "12px 12px 12px 12px",
-          // borderTop: "1px solid #EAECF0",
         },
       },
 

@@ -2,22 +2,22 @@ import requests from "./httpServices";
 let propertiesCache = null;
 
 const AllPages = {
-properties: async (force = false) => {
-  if (propertiesCache && !force) {
-    return propertiesCache;
-  }
-  try {
-    const timestamp = new Date().getTime();
-    const response = await requests.get(
-      `/properties?acf_format=standard&t=${timestamp}`
-    );
-    propertiesCache = response;
-    return response;
-  } catch (error) {
-    console.error("Error fetching properties:", error);
-    throw error;
-  }
-},
+  properties: async (force = false) => {
+    if (propertiesCache && !force) {
+      return propertiesCache;
+    }
+    try {
+      const timestamp = new Date().getTime();
+      const response = await requests.get(
+        `/properties?acf_format=standard&t=${timestamp}`
+      );
+      propertiesCache = response;
+      return response;
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+      throw error;
+    }
+  },
 
   inventoryList: async (id) => {
     try {
