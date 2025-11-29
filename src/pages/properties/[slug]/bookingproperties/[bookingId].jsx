@@ -31,7 +31,7 @@ export default function page() {
   const InventoryListApiFun = async () => {
     try {
       setLoading(true);
-      const response = await AllPages.inventoryList(41);
+      const response = await AllPages.inventoryList(41); 
       const data = response?.data || [];
       const matchedItem = data.find((item) => item.id === bookingId);
       setInventoryItem(matchedItem);
@@ -43,6 +43,7 @@ export default function page() {
     }
   };
 
+  console.log("reviewApplicationlist", reviewApplicationlist);
   const getAadhaarDetails = async (session_id) => {
     const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
 
@@ -101,27 +102,27 @@ export default function page() {
 
   const tableData = inventoryItem
     ? [
-        {
-          id: inventoryItem?.id,
-          plotNo: inventoryItem?.plot_no,
-          property_id: inventoryItem?.property_id,
-          plotSize: `${inventoryItem?.plot_size} sq.ft`,
-          plotFacing: inventoryItem?.facing,
-          plcSide: inventoryItem?.plc_side,
-          plcPercentage: `${inventoryItem?.plc_percentage}%`,
-          north: inventoryItem?.north,
-          south: inventoryItem?.south,
-          east: inventoryItem?.east,
-          west: inventoryItem?.west,
-          withPlc: `₹${inventoryItem?.with_plc}`,
-          additional: `₹${inventoryItem?.additional}`,
-          total: inventoryItem?.total,
-          status: inventoryItem?.status,
-          hold_expires_at: inventoryItem?.hold_expires_at,
-          created_at: inventoryItem?.created_at,
-          booked: inventoryItem?.status?.toLowerCase() !== "available",
-        },
-      ]
+      {
+        id: inventoryItem?.id,
+        plotNo: inventoryItem?.plot_no,
+        property_id: inventoryItem?.property_id,
+        plotSize: `${inventoryItem?.plot_size} sq.ft`,
+        plotFacing: inventoryItem?.facing,
+        plcSide: inventoryItem?.plc_side,
+        plcPercentage: `${inventoryItem?.plc_percentage}%`,
+        north: inventoryItem?.north,
+        south: inventoryItem?.south,
+        east: inventoryItem?.east,
+        west: inventoryItem?.west,
+        withPlc: `₹${inventoryItem?.with_plc}`,
+        additional: `₹${inventoryItem?.additional}`,
+        total: inventoryItem?.total,
+        status: inventoryItem?.status,
+        hold_expires_at: inventoryItem?.hold_expires_at,
+        created_at: inventoryItem?.created_at,
+        booked: inventoryItem?.status?.toLowerCase() !== "available",
+      },
+    ]
     : [];
   const reviewApplication = async () => {
     try {
@@ -138,6 +139,9 @@ export default function page() {
     }
   };
 
+
+
+
   const bookedStatusUpdateFun = async () => {
     try {
       await AllPages.bookedStatusUpdate(tableData[0]?.property_id, bookingId);
@@ -146,6 +150,11 @@ export default function page() {
       console.error("Error holding flat:", error.message);
     }
   };
+
+
+
+
+
 
   const propertyId = tableData[0]?.property_id;
 
@@ -289,9 +298,9 @@ export default function page() {
     } else if (currentStep === 4) {
       return (
         <>
-         <PaymentPlan handlePreviousStep={handlePreviousStep}/>
+          <PaymentPlan handlePreviousStep={handlePreviousStep} />
 
-     
+
         </>
       );
     }
@@ -306,16 +315,14 @@ export default function page() {
           {steps?.map((step) => (
             <div key={step?.id} className="flex-1 flex flex-col items-center">
               <div
-                className={`md:w-12 w-8 md:h-12 h-8 rounded-full flex items-center text-[12px] md:text-[16px] justify-center font-bold ${
-                  currentStep >= step?.id
-                    ? "border-2 border-[#066fa9] text-[#066fa9] "
-                    : "text-stone-900"
-                } transition-colors z-50 duration-300
+                className={`md:w-12 w-8 md:h-12 h-8 rounded-full flex items-center text-[12px] md:text-[16px] justify-center font-bold ${currentStep >= step?.id
+                  ? "border-2 border-[#066fa9] text-[#066fa9] "
+                  : "text-stone-900"
+                  } transition-colors z-50 duration-300
                   ${currentStep > step?.id ? "bg-[#066FA9]" : "bg-white "}
-                  ${
-                    currentStep === step?.id
-                      ? "bg-[#066FA9]"
-                      : " text-[#066fa9]"
+                  ${currentStep === step?.id
+                    ? "bg-[#066FA9]"
+                    : " text-[#066fa9]"
                   }
                 `}
               >
@@ -339,9 +346,8 @@ export default function page() {
               </div>
               {/* Step name */}
               <div
-                className={`mt-2 text-center lg:text-[16px] md:text-md text-[11px] font-medium transition-colors duration-300 ${
-                  currentStep >= step?.id ? "text-[#1C1C1C]" : "text-[#1C1C1C]"
-                }`}
+                className={`mt-2 text-center lg:text-[16px] md:text-md text-[11px] font-medium transition-colors duration-300 ${currentStep >= step?.id ? "text-[#1C1C1C]" : "text-[#1C1C1C]"
+                  }`}
               >
                 {step?.name}
               </div>

@@ -25,7 +25,7 @@ const InventoryTable = memo(
     const [now, setNow] = useState(new Date()); // track current time
     const rowsPerPage = 20;
 
-    // console.log("tableData", tableData);
+    console.log("tableData", tableData);
 
     // ✅ Update current time every second
     useEffect(() => {
