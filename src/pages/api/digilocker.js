@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
     try {
-        const { slug } = req.body;
+        const { slug, bookingId } = req.body;
 
         // Step 1: Get dynamic access token
         const authHeaders = new Headers();
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
         const authData = await authResponse.json();
         const accessToken = authData.access_token || authData.accessToken;
-        console.log("accessToken::", authData)
+        console.log("accessToken::", authData);
         if (!accessToken) throw new Error("Failed to fetch access token");
 
         // Step 2: Prepare Digilocker init session headers
@@ -25,29 +25,23 @@ export default async function handler(req, res) {
         myHeaders.append("x-api-version", "v1");
         myHeaders.append("Content-Type", "application/json");
 
-        // Set custom consent expiry: 1 hour from now
-        const oneHour = 60 * 60 * 1000; // milliseconds
+        // Consent expiry: 1 hour from now
+        const oneHour = 60 * 60 * 1000;
         const consentExpiry = Date.now() + oneHour;
 
+        // ✅ Restrict to Aadhaar only
         const raw = JSON.stringify({
             "@entity": "in.co.sandbox.kyc.digilocker.session.request",
             flow: "signin",
-            doc_types: ["aadhaar", "pan"],
-            redirect_url: `http://localhost:4600/properties/${slug}`,
+            doc_types: ["aadhaar"], // ✅ only Aadhaar
+            redirect_url: `${process.env.NEXT_PUBLIC_SANDBOX_REDIRECTION_URL}/properties/${slug}/bookingproperties/${bookingId}`,
             options: {
                 pinless: true,
                 usernameless: true,
                 verified_mobile: "9512120133",
-                verification_method: [
-                    "driving_license",
-                    "aadhaar",
-                    "pan",
-                    "email",
-                    "username",
-                    "mobile",
-                    "other",
-                ],
-            },  
+                verification_method: ["aadhaar"], // ✅ only Aadhaar
+            },
+            // consent_expiry: consentExpiry,
         });
 
         const requestOptions = {
@@ -64,12 +58,41 @@ export default async function handler(req, res) {
 
         const digiData = await digiResponse.json();
 
-        // Return the authorization_url and consent_expiry to frontend
+        // Store accessToken in secure session if bookingId exists
+        if (bookingId && slug) {
+            try {
+                const { sessions } = require('../session/create');
+                const crypto = require('crypto');
+                const sessionToken = crypto.randomBytes(32).toString('hex');
+
+                const sessionData = {
+                    bookingId,
+                    slug,
+                    accessToken,
+                    plotNo: bookingId,
+                    currentStep: 2,
+                    createdAt: Date.now(),
+                    expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+                };
+
+                sessions.set(sessionToken, sessionData);
+
+                // Set secure httpOnly cookie
+                res.setHeader('Set-Cookie', [
+                    `booking_session=${sessionToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${86400}`
+                ]);
+            } catch (sessionError) {
+                console.error('Error creating session in digilocker:', sessionError);
+                // Continue even if session creation fails
+            }
+        }
+
+        // Return to frontend (accessToken still returned for backward compatibility during migration)
         res.status(200).json({
             digiData,
             accessToken,
-            consentExpiry, // timestamp in ms
-            consentExpiryReadable: new Date(consentExpiry).toLocaleString(), // human-readable
+            consentExpiry,
+            consentExpiryReadable: new Date(consentExpiry).toLocaleString(),
         });
     } catch (error) {
         console.error("Digilocker API error:", error);

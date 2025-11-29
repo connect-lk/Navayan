@@ -6,12 +6,13 @@ import { applicantFields } from "../../data.js";
 import { coApplicantFields } from "../../data.js";
 import { HiOutlineArrowSmallRight } from "react-icons/hi2";
 import Link from "next/link.js";
+import { toast } from "react-toastify";
 
 const KYCForm = ({
   handleNextStep,
   tableData,
   kycDetails,
-  bookingId,
+  plotNo,
   allKycDetails,
   reviewApplication,
 }) => {
@@ -154,7 +155,7 @@ const KYCForm = ({
           body: JSON.stringify({
             bookingId: generateBookingId(),
             property_id: tableData[0]?.property_id,
-            plot_no: bookingId,
+            plot_no: plotNo,
             totalAmount: tableData[0]?.total,
             paymentStatus: "pending",
             photo: kycDetails?.photo,
@@ -165,16 +166,24 @@ const KYCForm = ({
 
       const data = await res.json();
       if (data?.success) {
-        reviewApplication();
-        console.log("Booking & KYC saved:", data?.data);
+        console.log("Booking & KYC saved:", data.data);
+        // Wait for reviewApplication to complete before navigating
+        try {
+          await reviewApplication(true); // Force refresh to get latest data
+          console.log("Review application data loaded successfully");
+        } catch (error) {
+          console.error("Error loading review application:", error);
+          // Still navigate even if reviewApplication fails
+        }
+        handleNextStep(3);
       } else {
         console.error("Failed:", data.message || data);
+        toast.error(data.message)
       }
     } catch (error) {
       console.error("Error submitting booking:", error);
     }
 
-    handleNextStep(3);
   };
 
   return (

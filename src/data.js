@@ -226,46 +226,46 @@ export const bookingProjects = [{
     booked: 10,
 },];
 export const applicantFields = [{
-    name: "applicantName",
-    placeholder: "Full Name of Applicant",
-    type: "text",
-    readOnly: "readOnly"
-},
-{ name: "applicantCof", placeholder: "C/o of", type: "text", readOnly: "readOnly" },
-{
-    name: "applicantPhone",
-    placeholder: "Phone No. of Applicant",
-    type: "tel",
-},
-{
-    name: "applicantAdditionalPhone",
-    placeholder: "Additional No. of Applicant",
-    type: "tel",
-},
-{
-    name: "applicantEmail",
-    placeholder: "Email Id of Applicant",
-    type: "email",
-},
-{
-    name: "applicantAddress",
-    placeholder: "Permanent Address of Applicant",
-    type: "textarea",
-    readOnly: "readOnly"
-},
-{
-    name: "applicantAadhar",
-    placeholder: "Aadhar No. of Applicant",
-    type: "text",
-    readOnly: "readOnly"
-},
-{ name: "applicantPan", placeholder: "PAN No. of Applicant", type: "text" },
-{ name: "applicantDob", placeholder: "Date of Birth", type: "text", readOnly: "readOnly" },
-{
-    name: "applicantProfession",
-    placeholder: "Profession of Applicant",
-    type: "text",
-},
+        name: "applicantName",
+        placeholder: "Full Name of Applicant",
+        type: "text",
+        readOnly: "readOnly"
+    },
+    { name: "applicantCof", placeholder: "C/o of", type: "text", readOnly: "readOnly" },
+    {
+        name: "applicantPhone",
+        placeholder: "Phone No. of Applicant",
+        type: "tel",
+    },
+    {
+        name: "applicantAdditionalPhone",
+        placeholder: "Additional No. of Applicant",
+        type: "tel",
+    },
+    {
+        name: "applicantEmail",
+        placeholder: "Email Id of Applicant",
+        type: "email",
+    },
+    {
+        name: "applicantAddress",
+        placeholder: "Permanent Address of Applicant",
+        type: "textarea",
+        readOnly: "readOnly"
+    },
+    {
+        name: "applicantAadhar",
+        placeholder: "Aadhar No. of Applicant",
+        type: "text",
+        readOnly: "readOnly"
+    },
+    { name: "applicantPan", placeholder: "PAN No. of Applicant", type: "text", },
+    { name: "applicantDob", placeholder: "Date of Birth", type: "date", readOnly: "readOnly" },
+    {
+        name: "applicantProfession",
+        placeholder: "Profession of Applicant",
+        type: "text",
+    },
 ];
 
 export const coApplicantFields = [

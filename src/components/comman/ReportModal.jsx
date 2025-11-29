@@ -46,7 +46,7 @@ const ReportModal = ({ isModalOpen, setIsModalOpen }) => {
         footer={null}
         centered
         className="rounded-2xl max-w-md mx-auto shadow-lg bg-[#ffffff] report-modal "
-        bodyStyle={{ padding: 0 }}
+        // bodyStyle={{ padding: 0 }}
       >
         {/* Modal Container */}
         <div className="bg-[#ffffff] p-3 rounded-2xl overflow-hidden">

@@ -21,6 +21,8 @@
     "lodash": "^4.17.21",
     "material-react-table": "^3.2.1",
     "next": "^15.5.2",
+    "nodemailer": "^7.0.11",
+    "razorpay": "^2.9.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-feather": "^2.0.10",
@@ -28,6 +30,7 @@
     "react-icons": "^5.5.0",
     "react-spinners": "^0.17.0",
     "react-toastify": "^11.0.5",
+    "sweetalert2": "^11.26.3",
     "xml2js": "^0.6.2",
     "yup": "^1.7.0"
   },

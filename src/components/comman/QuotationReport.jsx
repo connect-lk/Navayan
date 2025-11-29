@@ -5,11 +5,11 @@ import { pdf } from "@react-pdf/renderer";
 import QuotationPDF from "./QuotationPDF";
 import { HiDownload } from "react-icons/hi";
 
-const QuotationReport = () => {
+const QuotationReport = ({ quotationData: propQuotationData }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Static data from the quotation document
-  const quotationData = {
+  // Static data from the quotation document (fallback)
+  const defaultQuotationData = {
     quotationNumber: "QT-B33635AA",
     date: "26 Nov 2025",
     time: "10:25 AM",
@@ -75,6 +75,9 @@ const QuotationReport = () => {
     ],
   };
 
+  // Use prop data if provided, otherwise use default
+  const quotationData = propQuotationData || defaultQuotationData;
+
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
@@ -113,7 +116,7 @@ const QuotationReport = () => {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="w-full py-4 px-2 sm:px-4 lg:px-6">
       {/* Download Button */}
       <div className="max-w-screen-lg mx-auto mb-4 flex justify-end">
         <button
@@ -220,6 +223,30 @@ const QuotationReport = () => {
                   <span className="font-semibold">Contact Number:</span>{" "}
                   {quotationData.customer.contactNumber}
                 </p>
+                {quotationData.customer.email && quotationData.customer.email !== "N/A" && (
+                  <p>
+                    <span className="font-semibold">Email:</span>{" "}
+                    {quotationData.customer.email}
+                  </p>
+                )}
+                {quotationData.customer.address && quotationData.customer.address !== "N/A" && (
+                  <p>
+                    <span className="font-semibold">Address:</span>{" "}
+                    {quotationData.customer.address}
+                  </p>
+                )}
+                {quotationData.customer.aadhar && quotationData.customer.aadhar !== "N/A" && (
+                  <p>
+                    <span className="font-semibold">Aadhar No:</span>{" "}
+                    {quotationData.customer.aadhar}
+                  </p>
+                )}
+                {quotationData.customer.pan && quotationData.customer.pan !== "N/A" && (
+                  <p>
+                    <span className="font-semibold">PAN No:</span>{" "}
+                    {quotationData.customer.pan}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -411,7 +438,11 @@ const QuotationReport = () => {
                     Total Scheduled
                   </td>
                   <td className="border border-gray-300 px-4 py-3 text-sm font-bold text-right text-[#EF6136]">
-                    {formatCurrency(quotationData.costs.total)}
+                    {formatCurrency(
+                      quotationData.costs.totalScheduled || 
+                      quotationData.paymentSchedule.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) ||
+                      quotationData.costs.total
+                    )}
                   </td>
                 </tr>
               </tbody>

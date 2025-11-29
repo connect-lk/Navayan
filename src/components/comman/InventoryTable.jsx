@@ -6,6 +6,7 @@ import { GrNext } from "react-icons/gr";
 import { MdArrowBackIosNew } from "react-icons/md";
 import AllPages from "@/service/allPages";
 import { toast, ToastContainer } from "react-toastify";
+import SessionManager from "@/utils/sessionManager";
 
 const InventoryTable = memo(
   ({
@@ -25,13 +26,130 @@ const InventoryTable = memo(
     const [now, setNow] = useState(new Date()); // track current time
     const rowsPerPage = 20;
 
-    console.log("tableData", tableData);
+    // console.log("tableData", tableData);
 
     // ✅ Update current time every second
     useEffect(() => {
       const interval = setInterval(() => setNow(new Date()), 1000);
       return () => clearInterval(interval);
     }, []);
+
+    // ✅ Handle hold status update when expired
+    const handleHoldStatusUpdate = useCallback(async (propertyId, plotNo) => {
+      try {
+        console.log(`⏰ Hold expired! Calling update_property_status API for property_id: ${propertyId}, plot_no: ${plotNo}`);
+        const response = await AllPages.holdStatusUpdate(propertyId, plotNo);
+        console.log("✅ holdStatusUpdate API response:", response);
+
+        // Check for success in different response formats
+        const isSuccess = response?.success ||
+          response?.status === true ||
+          response?.status === 200 ||
+          (response?.data && Object.keys(response.data).length > 0);
+
+        if (isSuccess) {
+          console.log(`✅ Successfully updated property ${plotNo} status to available`);
+
+          // Refresh inventory list to get updated status
+          if (InventoryListApiFun) {
+            console.log("🔄 Refreshing inventory list...");
+            await InventoryListApiFun();
+          }
+          // Force fresh project API
+          if (fetchProject) {
+            console.log("🔄 Refreshing project data...");
+            await fetchProject(true);
+          }
+          // toast.success(`Property ${plotNo} is now available`);
+        } else {
+          console.error("❌ Failed to update hold status - unexpected response format:", response);
+          // Still try to refresh in case it worked but response format is different
+          if (InventoryListApiFun) {
+            await InventoryListApiFun();
+          }
+          if (fetchProject) {
+            await fetchProject(true);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error updating hold status:", error);
+        // Still try to refresh in case it worked
+        if (InventoryListApiFun) {
+          await InventoryListApiFun();
+        }
+        if (fetchProject) {
+          await fetchProject(true);
+        }
+      }
+    }, [InventoryListApiFun, fetchProject]);
+
+    // ✅ Reset updatedHoldRows when tableData changes significantly
+    // Reset when new data comes in (e.g., after refresh) but keep entries for rows that still exist
+    useEffect(() => {
+      if (!tableData || tableData.length === 0) {
+        setUpdatedHoldRows([]);
+        return;
+      }
+
+      // Clean up entries for rows that no longer exist or no longer have holds
+      setUpdatedHoldRows((prev) => {
+        return prev.filter(id => {
+          const [propId, plotNo] = id.split('::'); // Use :: separator
+          const row = tableData?.find(r =>
+            r?.property_id?.toString() === propId &&
+            r?.plotNo?.toString() === plotNo &&
+            r?.hold_expires_at // Still has a hold
+          );
+          return !!row; // Keep if row still exists with hold
+        });
+      });
+    }, [tableData?.length]);
+
+    // ✅ Monitor hold expiration and auto-update status
+    useEffect(() => {
+      if (!tableData || tableData.length === 0) return;
+
+      const checkExpiredHolds = () => {
+        tableData.forEach((row) => {
+          // Skip if missing required fields
+          if (!row?.hold_expires_at || !row?.plotNo) return;
+
+          // Skip if property_id is missing (but log for debugging)
+          if (!row?.property_id) {
+            console.warn(`⚠️ Missing property_id for plot ${row.plotNo}, skipping status update`);
+            return;
+          }
+
+          const remainingTime = getRemainingTime(row.hold_expires_at);
+
+          // Debug log for holds that are about to expire
+          if (remainingTime > 0 && remainingTime <= 5 && row?.status?.toLowerCase() === "hold") {
+            console.log(`⏰ Plot ${row.plotNo} will expire in ${remainingTime} seconds`);
+          }
+
+          // Create unique identifier for tracking (use property_id::plotNo combination with :: separator)
+          const uniqueId = `${row.property_id}::${row.plotNo}`;
+
+          // If hold expired (regardless of current status, as status might still be "available" or "hold")
+          // and not already updated, call the API to update status to available
+          if (
+            remainingTime === 0 &&
+            !updatedHoldRows.includes(uniqueId)
+          ) {
+            console.log(`⏰ Hold expired for plot ${row.plotNo} (property_id: ${row.property_id}, current status: ${row?.status}), calling update_property_status API...`);
+            handleHoldStatusUpdate(row.property_id, row.plotNo);
+            setUpdatedHoldRows((prev) => [...prev, uniqueId]);
+          }
+        });
+      };
+
+      // Check immediately
+      checkExpiredHolds();
+
+      // Check every second for expired holds
+      const interval = setInterval(checkExpiredHolds, 1000);
+      return () => clearInterval(interval);
+    }, [tableData, now, updatedHoldRows, handleHoldStatusUpdate]);
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -48,15 +166,43 @@ const InventoryTable = memo(
     };
     const getRemainingTime = (expiresAt) => {
       if (!expiresAt) return 0;
-      const expiry = new Date(expiresAt.replace(" ", "T")).getTime();
-      const now = new Date().getTime();
+      try {
+        // Handle different date formats
+        let expiryDate;
+        if (typeof expiresAt === 'string') {
+          // Replace space with T for ISO format, or handle other formats
+          const dateStr = expiresAt.includes('T') ? expiresAt : expiresAt.replace(" ", "T");
+          expiryDate = new Date(dateStr);
+        } else {
+          expiryDate = new Date(expiresAt);
+        }
 
-      const diff = Math.round((expiry - now) / 1000); // round instead of floor
-      return diff > 0 ? diff : 0;
+        const expiry = expiryDate.getTime();
+        const now = new Date().getTime();
+
+        if (isNaN(expiry)) {
+          console.error("Invalid expiry date:", expiresAt);
+          return 0;
+        }
+
+        const diff = Math.round((expiry - now) / 1000); // round instead of floor
+        return diff > 0 ? diff : 0;
+      } catch (error) {
+        console.error("Error calculating remaining time:", error, expiresAt);
+        return 0;
+      }
     };
 
     const getAadhaarDetails = async (session_id) => {
-      const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+      // Get access token from secure session instead of localStorage
+      const sensitiveData = await SessionManager.getSensitiveData();
+      const access_token = sensitiveData?.accessToken;
+
+      if (!access_token) {
+        console.error("Access token not found in session");
+        return null;
+      }
+
       const res = await fetch(
         `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
       );
@@ -102,86 +248,88 @@ const InventoryTable = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-      // return await holdFlatFun(id);
-      localStorage.setItem("booking_id", id);
-      const session_id = localStorage.getItem("session_id");
-      const access_token = localStorage.getItem("accessToken");
+      await holdFlatFun(id);
       setLoadingRow(id);
-      let statusData;
-      if (session_id && access_token) {
-        const statusRes = await fetch(
-          `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
-        );
-
-        statusData = await statusRes.json();
-        console.log("Session Status:", statusData);
-        const createdAt = statusData?.data?.created_at;
-        const updatedAt = statusData?.data?.updated_at;
-      }
-
-      if (
-        statusData?.sessionExpired ||
-        !session_id ||
-        statusData?.code == 521 ||
-        statusData?.code == 403
-      ) {
-        // alert("d,jsahfjdasgfjh")
-        const res = await fetch("/api/digilocker", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            slug,
-          }),
-        });
-
-        const data = await res.json();
-        console.log("API Response:", data);
-
-        if (data.accessToken) {
-          localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
-          await holdFlatFun(id);
-        }
-
-        if (data.digiData?.data?.authorization_url) {
-          window.location.href = data.digiData.data.authorization_url; // redirect user
-        } else {
-          setLoadingRow(null);
-          console.error("No authorization URL found", data);
-          if (data.error) {
-            toast.error("Something went wrong !")
-          }
-        }
-      } else {
-        // alert()
-
-        getAadhaarDetails(session_id).then(async (Details) => {
-          await holdFlatFun(id);
-          setLoadingRow(id);
-
-          // Save object as JSON string
-          localStorage.setItem("kyc_Details", JSON.stringify(Details));
-          const bokking_id = localStorage.getItem("booking_id");
+      setTimeout(async () => {
+        // Create secure session instead of using localStorage
+        try {
+          await SessionManager.createSession({
+            bookingId: id,
+            slug: slug,
+            plotNo: id,
+            currentStep: 2
+          });
           router.push(`/properties/${slug}/bookingproperties/${id}`);
-        });
-      }
-    });
-    const handleHoldStatusUpdate = async (propertyId, plotNo) => {
-      try {
-        const response = await AllPages.holdStatusUpdate(propertyId, plotNo);
-        if (response?.success) {
-          await InventoryListApiFun(); // refresh inventory list
-          await fetchProject(true); // force fresh project API
+        } catch (error) {
+          console.error("Error creating session:", error);
+          router.push(`/properties/${slug}/bookingproperties/${id}`);
         }
-      } catch (error) {
-        console.error("Failed to update hold status:", error);
-      }
-    };
+      }, 1000);
+      // const session_id = localStorage.getItem("session_id");
+      // const access_token = localStorage.getItem("accessToken");
+      // let statusData;
+      // if (session_id && access_token) {
+      //   const statusRes = await fetch(
+      //     `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
+      //   );
+
+      //   statusData = await statusRes.json();
+      //   console.log("Session Status:", statusData);
+      //   const createdAt = statusData?.data?.created_at;
+      //   const updatedAt = statusData?.data?.updated_at;
+      // }
+
+      // if (
+      //   statusData?.sessionExpired ||
+      //   !session_id ||
+      //   statusData?.code == 521 ||
+      //   statusData?.code == 403
+      // ) {
+      //   // alert("d,jsahfjdasgfjh")
+      //   const res = await fetch("/api/digilocker", {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify({
+      //       slug,
+      //     }),
+      //   });
+
+      //   const data = await res.json();
+      //   console.log("API Response:", data);
+
+      //   if (data.accessToken) {
+      //     localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
+      //     await holdFlatFun(id);
+      //   }
+
+      //   if (data.digiData?.data?.authorization_url) {
+      //     window.location.href = data.digiData.data.authorization_url; // redirect user
+      //   } else {
+      //     setLoadingRow(null);
+      //     console.error("No authorization URL found", data);
+      //     if (data.error) {
+      //       toast.error("Something went wrong !")
+      //     }
+      //   }
+      // } else {
+
+      //   getAadhaarDetails(session_id).then(async (Details) => {
+      //     await holdFlatFun(id);
+      //     setLoadingRow(id);
+
+      //     // Save object as JSON string
+      //     localStorage.setItem("kyc_Details", JSON.stringify(Details));
+      //     const bokking_id = localStorage.getItem("booking_id");
+      //     router.push(`/properties/${slug}/bookingproperties/${id}`);
+      //   });
+      // }
+    });
 
     return (
       <div className="bg-white rounded-xl min-h-auto shadow-sm">
-        <ToastContainer/>
+        <ToastContainer />
         <div className="rounded-xl overflow-hidden bg-gray-100">
           <div className="overflow-x-auto relative">
             <table className="w-full table-auto border-collapse whitespace-nowrap">
@@ -248,23 +396,10 @@ const InventoryTable = memo(
                   </tr>
                 ) : currentRows?.length > 0 ? (
                   currentRows.map((row, index) => {
-                    const remainingTime = getRemainingTime(
-                      row?.hold_expires_at,
-                      row?.created_at
-                    );
+                    const remainingTime = getRemainingTime(row?.hold_expires_at);
 
-                    const isHoldActive = remainingTime > 1;
+                    const isHoldActive = remainingTime > 0;
 
-                    if (
-                      remainingTime === 0 &&
-                      row?.status?.toLowerCase() === "hold" &&
-                      !updatedHoldRows.includes(row?.id) &&
-                      row?.property_id &&
-                      row?.plotNo
-                    ) {
-                      handleHoldStatusUpdate(row.property_id, row.plotNo);
-                      setUpdatedHoldRows((prev) => [...prev, row.id]); // mark as updated
-                    }
                     return (
                       <tr
                         key={index}
@@ -306,13 +441,12 @@ const InventoryTable = memo(
                             </span>
                           ) : (
                             <span
-                              className={`px-2.5 py-1.5 rounded-sm text-sm font-semibold ${
-                                row.status?.toLowerCase() === "available"
-                                  ? "bg-green-50 text-green-800"
-                                  : row.status?.toLowerCase() === "booked"
+                              className={`px-2.5 py-1.5 rounded-sm text-sm font-semibold ${row.status?.toLowerCase() === "available"
+                                ? "bg-green-50 text-green-800"
+                                : row.status?.toLowerCase() === "booked"
                                   ? "bg-red-50 text-red-800"
                                   : "bg-gray-100 text-gray-600"
-                              }`}
+                                }`}
                             >
                               {row.status}
                             </span>
@@ -324,18 +458,17 @@ const InventoryTable = memo(
                             <td className="p-4 text-center bg-white sticky right-0 z-10">
                               <button
                                 onClick={() => handleBookNow(row?.plotNo)}
-                                className={`font-semibold sm:px-4 px-3 sm:py-2 py-1.5 sm:text-[14px] text-[12px] flex items-center gap-4 w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${
-                                  row?.booked || isHoldActive
-                                    ? "bg-[#D1D5DB] text-[#4B5563] cursor-not-allowed"
-                                    : "hover:bg-[#055a87] bg-[#066FA9] text-white cursor-pointer"
-                                }`}
+                                className={`font-semibold sm:px-4 px-3 sm:py-2 py-1.5 sm:text-[14px] text-[12px] flex items-center gap-4 w-fit rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:shadow-xl ${row?.booked || isHoldActive
+                                  ? "bg-[#D1D5DB] text-[#4B5563] cursor-not-allowed"
+                                  : "hover:bg-[#055a87] bg-[#066FA9] text-white cursor-pointer"
+                                  }`}
                                 disabled={row?.booked || isHoldActive}
                               >
                                 {row?.booked
                                   ? "Booked"
                                   : isHoldActive
-                                  ? "Hold"
-                                  : "Book Now"}
+                                    ? "Hold"
+                                    : "Book Now"}
                                 {loadingRow === row?.plotNo && (
                                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                                 )}
@@ -390,11 +523,10 @@ const InventoryTable = memo(
                       <button
                         key={1}
                         onClick={() => setCurrentPage(1)}
-                        className={`sm:w-10 w-8 sm:h-10 h-8 flex items-center justify-center rounded-full text-sm font-medium transition ${
-                          currentPage === 1
-                            ? "bg-[#066FA9] text-white"
-                            : "transition-all shadow-sm hover:shadow-lg border border-slate-200 text-slate-600 hover:text-white hover:bg-[#066FA9]"
-                        }`}
+                        className={`sm:w-10 w-8 sm:h-10 h-8 flex items-center justify-center rounded-full text-sm font-medium transition ${currentPage === 1
+                          ? "bg-[#066FA9] text-white"
+                          : "transition-all shadow-sm hover:shadow-lg border border-slate-200 text-slate-600 hover:text-white hover:bg-[#066FA9]"
+                          }`}
                       >
                         1
                       </button>
@@ -412,11 +544,10 @@ const InventoryTable = memo(
                       <button
                         key={i}
                         onClick={() => setCurrentPage(i)}
-                        className={`sm:w-10 w-8 sm:h-10 h-8 flex items-center justify-center rounded-full text-sm font-medium transition ${
-                          currentPage === i
-                            ? "bg-[#066FA9] text-white"
-                            : "transition-all shadow-sm hover:shadow-lg border border-slate-200 text-slate-600 hover:text-white hover:bg-[#066FA9]"
-                        }`}
+                        className={`sm:w-10 w-8 sm:h-10 h-8 flex items-center justify-center rounded-full text-sm font-medium transition ${currentPage === i
+                          ? "bg-[#066FA9] text-white"
+                          : "transition-all shadow-sm hover:shadow-lg border border-slate-200 text-slate-600 hover:text-white hover:bg-[#066FA9]"
+                          }`}
                       >
                         {i}
                       </button>
@@ -434,11 +565,10 @@ const InventoryTable = memo(
                       <button
                         key={totalPages}
                         onClick={() => setCurrentPage(totalPages)}
-                        className={`sm:w-10 w-8 sm:h-10 h-8 flex items-center justify-center rounded-full text-sm font-medium transition sm:block hidden ${
-                          currentPage === totalPages
-                            ? "bg-[#066FA9] text-white"
-                            : "transition-all shadow-sm hover:shadow-lg border border-slate-200 text-slate-600 hover:text-white hover:bg-[#066FA9]"
-                        }`}
+                        className={`sm:w-10 w-8 sm:h-10 h-8 flex items-center justify-center rounded-full text-sm font-medium transition sm:block hidden ${currentPage === totalPages
+                          ? "bg-[#066FA9] text-white"
+                          : "transition-all shadow-sm hover:shadow-lg border border-slate-200 text-slate-600 hover:text-white hover:bg-[#066FA9]"
+                          }`}
                       >
                         {totalPages}
                       </button>

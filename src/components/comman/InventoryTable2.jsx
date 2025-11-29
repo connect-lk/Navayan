@@ -7,6 +7,7 @@ import {
   useMaterialReactTable,
   createMRTColumnHelper,
 } from "material-react-table";
+import SessionManager from "@/utils/sessionManager";
 
 const InventoryTable2 = memo(
   ({
@@ -48,7 +49,15 @@ const InventoryTable2 = memo(
     }, []);
 
     const getAadhaarDetails = async (session_id) => {
-      const access_token = localStorage.getItem("accessToken");
+      // Get access token from secure session instead of localStorage
+      const sensitiveData = await SessionManager.getSensitiveData();
+      const access_token = sensitiveData?.accessToken;
+      
+      if (!access_token) {
+        console.error("Access token not found in session");
+        return null;
+      }
+      
       const res = await fetch(
         `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
       );
@@ -93,61 +102,87 @@ const InventoryTable2 = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-      localStorage.setItem("booking_id", id);
-      const session_id = localStorage.getItem("session_id");
-      const access_token = localStorage.getItem("accessToken");
-      setLoadingRow(id);
-      let statusData;
-      if (session_id && access_token) {
-        const statusRes = await fetch(
-          `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
-        );
-
-        statusData = await statusRes.json();
-        console.log("Session Status:", statusData);
-        const createdAt = statusData?.data?.created_at;
-        const updatedAt = statusData?.data?.updated_at;
-      }
-
-      if (
-        statusData?.sessionExpired ||
-        !session_id ||
-        statusData?.code == 521 ||
-        statusData?.code == 403
-      ) {
-        const res = await fetch("/api/digilocker", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            slug,
-          }),
+      try {
+        // Create secure session instead of localStorage
+        await SessionManager.createSession({
+          bookingId: id,
+          slug: slug,
+          plotNo: id,
+          currentStep: 2
         });
 
-        const data = await res.json();
-        console.log("API Response:", data);
+        setLoadingRow(id);
+        
+        // Get session data securely
+        const sessionData = await SessionManager.getSession();
+        const sensitiveData = await SessionManager.getSensitiveData();
+        
+        const session_id = sessionData?.sessionId || sensitiveData?.sessionId;
+        const access_token = sensitiveData?.accessToken;
+        
+        let statusData;
+        if (session_id && access_token) {
+          const statusRes = await fetch(
+            `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
+          );
 
-        if (data.accessToken) {
-          localStorage.setItem("accessToken", data.accessToken);
-          await holdFlatFun(id);
+          statusData = await statusRes.json();
+          console.log("Session Status:", statusData);
         }
 
-        if (data.digiData?.data?.authorization_url) {
-          window.location.href = data.digiData.data.authorization_url;
+        if (
+          statusData?.sessionExpired ||
+          !session_id ||
+          statusData?.code == 521 ||
+          statusData?.code == 403
+        ) {
+          const res = await fetch("/api/digilocker", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              slug,
+              bookingId: id
+            }),
+          });
+
+          const data = await res.json();
+          console.log("API Response:", data);
+
+          if (data.accessToken) {
+            // Save to secure session instead of localStorage
+            await SessionManager.updateSession({
+              accessToken: data.accessToken
+            });
+            await holdFlatFun(id);
+          }
+
+          if (data.digiData?.data?.authorization_url) {
+            window.location.href = data.digiData.data.authorization_url;
+          } else {
+            setLoadingRow(null);
+            console.error("No authorization URL found", data);
+          }
         } else {
-          setLoadingRow(null);
-          console.error("No authorization URL found", data);
-        }
-      } else {
-        getAadhaarDetails(session_id).then(async (Details) => {
-          await holdFlatFun(id);
-          setLoadingRow(id);
+          getAadhaarDetails(session_id).then(async (Details) => {
+            if (Details) {
+              await holdFlatFun(id);
+              setLoadingRow(id);
 
-          localStorage.setItem("kyc_Details", JSON.stringify(Details));
-          const bokking_id = localStorage.getItem("booking_id");
-          router.push(`/properties/${slug}/bookingproperties/${id}`);
-        });
+              // Save to secure session instead of localStorage
+              await SessionManager.updateSession({
+                kycDetails: Details,
+                sessionId: session_id
+              });
+              
+              router.push(`/properties/${slug}/bookingproperties/${id}`);
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error in handleBookNow:", error);
+        setLoadingRow(null);
       }
     });
 
