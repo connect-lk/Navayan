@@ -21,6 +21,7 @@
     "lodash": "^4.17.21",
     "material-react-table": "^3.2.1",
     "next": "^15.5.2",
+    "nodemailer": "^7.0.11",
     "razorpay": "^2.9.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",

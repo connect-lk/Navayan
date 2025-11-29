@@ -5,7 +5,7 @@ import InventoryTable from "@/components/comman/InventoryTable";
 import { KycTableData } from "@/data";
 import { ReviewTableData } from "@/data";
 import KYCForm from "@/components/comman/KYCForm";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   HiOutlineArrowSmallRight,
   HiOutlineArrowSmallLeft,
@@ -14,6 +14,8 @@ import { useParams } from "next/navigation";
 import AllPages from "@/service/allPages";
 import { useRouter } from "next/router";
 import PaymentPlan from "@/components/comman/PaymentPlan";
+import SessionManager from "@/utils/sessionManager";
+import BookedPropertyDetails from "@/components/comman/BookedPropertyDetails";
 
 // Main application component
 export default function page() {
@@ -21,22 +23,24 @@ export default function page() {
   const [loading, setLoading] = useState(false);
   const [kycDetails, setKycDetails] = useState({});
   const params = useParams();
-  const bookingId = params?.bookingId;
+  const plotNo = params?.bookingId;
   const slug = params?.slug;
-  // console.log("slug",slug)
-      const [loadingRow, setLoadingRow] = useState(null);
+  const [loadingRow, setLoadingRow] = useState(null);
   const router = useRouter();
   const { session_id } = router.query; // dynamically get session_id
   const [inventoryItem, setInventoryItem] = useState(null);
   const [reviewApplicationlist, setReviewApplicationList] = useState({});
   const [reviewloading, setReviewLoading] = useState(true);
+  const [accessValidated, setAccessValidated] = useState(false);
+  const [isBooked, setIsBooked] = useState(false);
+  const paymentStatusCheckedRef = useRef(false);
 
   const InventoryListApiFun = async () => {
     try {
       // setLoading(true);
       const response = await AllPages.inventoryList(41);
       const data = response?.data || [];
-      const matchedItem = data.find((item) => item.id === bookingId);
+      const matchedItem = data.find((item) => item.id === plotNo);
       setInventoryItem(matchedItem);
     } catch (error) {
       console.error("Error fetching inventory item:", error);
@@ -47,7 +51,14 @@ export default function page() {
   };
 
   const getAadhaarDetails = async (session_id) => {
-    const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+    // Get access token from secure session instead of localStorage
+    const sensitiveData = await SessionManager.getSensitiveData();
+    const access_token = sensitiveData?.accessToken;
+
+    if (!access_token) {
+      console.error("Access token not found in session");
+      return null;
+    }
 
     const res = await fetch(
       `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
@@ -141,24 +152,51 @@ export default function page() {
         },
       ]
     : [];
-  const reviewApplication = async () => {
+  // Track if reviewApplication has been called to prevent infinite loops
+  const reviewApplicationCalledRef = useRef(false);
+  const lastPropertyIdRef = useRef(null);
+  const lastPlotNoRef = useRef(null);
+
+  const reviewApplication = useCallback(async (forceRefresh = false) => {
+    const propertyId = tableData[0]?.property_id;
+    
+    // Prevent duplicate calls unless forced
+    if (!forceRefresh && 
+        reviewApplicationCalledRef.current && 
+        lastPropertyIdRef.current === propertyId && 
+        lastPlotNoRef.current === plotNo) {
+      return;
+    }
+
+    if (!propertyId || !plotNo) {
+      return;
+    }
+
     try {
-      setReviewLoading(false);
-      const response = await AllPages.reviewApplication(
-        tableData[0]?.property_id,
-        bookingId
-      );
-      setReviewApplicationList(response?.data[0]);
+      setReviewLoading(true);
+      reviewApplicationCalledRef.current = true;
+      lastPropertyIdRef.current = propertyId;
+      lastPlotNoRef.current = plotNo;
+      
+      const response = await AllPages.reviewApplication(propertyId, plotNo);
+      const bookingData = response?.data[0];
+      setReviewApplicationList(bookingData);
+      
+      // If booking data exists, it means the property is booked
+      if (bookingData && bookingData.bookingId) {
+        setIsBooked(true);
+      }
     } catch (error) {
       console.error("Error fetching inventory list:", error);
+      reviewApplicationCalledRef.current = false; // Reset on error
     } finally {
       setReviewLoading(false);
     }
-  };
+  }, [plotNo, tableData?.[0]?.property_id]); // Only depend on property_id, not entire tableData
 
   const bookedStatusUpdateFun = async () => {
     try {
-      await AllPages.bookedStatusUpdate(tableData[0]?.property_id, bookingId);
+      await AllPages.bookedStatusUpdate(tableData[0]?.property_id, plotNo);
       InventoryListApiFun();
     } catch (error) {
       console.error("Error holding flat:", error.message);
@@ -167,18 +205,20 @@ export default function page() {
 
   const propertyId = tableData[0]?.property_id;
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep < 4) {
       const newStep = currentStep + 1;
       setCurrentStep(newStep);
-      localStorage.setItem("currentStep", newStep);
+      // Update secure session instead of localStorage
+      await SessionManager.updateSession({ currentStep: newStep });
     }
   };
-  const handlePreviousStep = () => {
+  const handlePreviousStep = async () => {
     if (currentStep > 1) {
       const newStep = currentStep - 1;
       setCurrentStep(newStep);
-      localStorage.setItem("currentStep", newStep);
+      // Update secure session instead of localStorage
+      await SessionManager.updateSession({ currentStep: newStep });
     }
   };
 
@@ -187,51 +227,131 @@ export default function page() {
   }, [currentStep]);
 
   useEffect(() => {
-    if (bookingId && propertyId) {
+    if (plotNo && propertyId) {
+      // Reset ref when plotNo or propertyId changes
+      if (lastPropertyIdRef.current !== propertyId || lastPlotNoRef.current !== plotNo) {
+        reviewApplicationCalledRef.current = false;
+      }
       reviewApplication();
     }
-  }, [bookingId, propertyId]); // 👈 now stable, avoids infinite calls
+  }, [plotNo, propertyId, reviewApplication]);
+
+  // Check payment status and refresh if needed (only once after payment)
+  useEffect(() => {
+    if (
+      currentStep === 4 && 
+      reviewApplicationlist?.paymentStatus === "paid" && 
+      !paymentStatusCheckedRef.current &&
+      !reviewloading &&
+      propertyId
+    ) {
+      paymentStatusCheckedRef.current = true;
+      // Force refresh booking data once after payment
+      reviewApplicationCalledRef.current = false;
+      reviewApplication(true); // Force refresh
+    }
+  }, [currentStep, reviewApplicationlist?.paymentStatus, reviewloading, propertyId, reviewApplication]);
+
+  // Check booking status when inventory item loads
+  useEffect(() => {
+    if (inventoryItem) {
+      const status = inventoryItem?.status?.toLowerCase();
+      if (status === "booked") {
+        setIsBooked(true);
+      } else {
+        setIsBooked(false);
+      }
+    }
+  }, [inventoryItem]);
+
+  // Refresh inventory when payment is completed to get updated status
+  useEffect(() => {
+    if (reviewApplicationlist?.paymentStatus === "paid" && plotNo && !reviewloading) {
+      // Refresh inventory to get updated booked status
+      InventoryListApiFun();
+      // Refresh booking data
+      if (!reviewApplicationCalledRef.current) {
+        reviewApplicationCalledRef.current = false;
+        reviewApplication(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviewApplicationlist?.paymentStatus]);
+
+  // Validate booking access and load session data
+  useEffect(() => {
+    const validateAndLoadSession = async () => {
+      try {
+        // Validate booking access
+        const isValid = await SessionManager.validateBooking(plotNo, slug);
+        
+        if (!isValid && plotNo && slug) {
+          // If access is invalid, redirect to property page
+          router.push(`/properties/${slug}`);
+          return;
+        }
+
+        setAccessValidated(true);
+
+        // Load session data
+        const sessionData = await SessionManager.getSession();
+        if (sessionData) {
+          if (sessionData.currentStep) {
+            setCurrentStep(sessionData.currentStep);
+          }
+          if (sessionData.kycDetails) {
+            setKycDetails(sessionData.kycDetails);
+          }
+        }
+      } catch (error) {
+        console.error("Error validating booking access:", error);
+        router.push(`/properties/${slug}`);
+      }
+    };
+
+    if (plotNo && slug) {
+      validateAndLoadSession();
+    }
+  }, [plotNo, slug, router]);
 
   useEffect(() => {
-    const savedStep = localStorage.getItem("currentStep");
-    if (savedStep) {
-      setCurrentStep(parseInt(savedStep, 10));
-    }
-    const storedKyc = JSON.parse(localStorage.getItem("kyc_Details"));
-    if (storedKyc) {
-      setKycDetails(storedKyc);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (bookingId) {
+    if (plotNo) {
       InventoryListApiFun();
     }
-  }, [bookingId]);
+  }, [plotNo]);
 
 
 
     useEffect(() => {
       if (session_id) {
         setLoading(true);
-  // alert()
-        const bokking_id = localStorage.getItem("booking_id");
-        getAadhaarDetails(session_id).then((Details) => {
-          // Save object as JSON string
-          localStorage.setItem("kyc_Details", JSON.stringify(Details));
-          localStorage.setItem("session_id", session_id);
-  
-          // Optional: if you wanft to set state from storage later
-          setKycDetails(Details); 
-          // const bokking_id = localStorage.getItem("booking_id");
-          
-  
-          setLoading(false);
-          router.push(`/properties/${slug}/bookingproperties/${bookingId}`);
+        getAadhaarDetails(session_id).then(async (Details) => {
+          if (Details) {
+            // Save to secure session instead of localStorage
+            await SessionManager.createSession({
+              bookingId: plotNo,
+              slug: slug,
+              kycDetails: Details,
+              sessionId: session_id,
+              plotNo: plotNo,
+              currentStep: 2
+            });
+
+            // Get sensitive data for session
+            const sensitiveData = await SessionManager.getSensitiveData();
+            if (sensitiveData?.accessToken) {
+              await SessionManager.updateSession({
+                accessToken: sensitiveData.accessToken
+              });
+            }
+
+            setKycDetails(Details);
+            setLoading(false);
+            router.push(`/properties/${slug}/bookingproperties/${plotNo}`);
+          }
         });
-   
       }
-    }, [session_id]);
+    }, [session_id, plotNo, slug, router]);
 
 
   const steps = [
@@ -243,69 +363,83 @@ export default function page() {
 
 
   const handle_kyc = async() => {
-          localStorage.setItem("booking_id", bookingId);
-          const session_id = localStorage.getItem("session_id");
-          const access_token = localStorage.getItem("accessToken");
-          let statusData;
-          if (session_id && access_token) {
-            const statusRes = await fetch(
-              `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
-            );
-    
-            statusData = await statusRes.json();
-            console.log("Session Status:", statusData);
-            // const createdAt = statusData?.data?.created_at;
-            // const updatedAt = statusData?.data?.updated_at;
-          }
-    
-          if (
-            statusData?.sessionExpired ||
-            !session_id ||
-            statusData?.code == 521 ||
-            statusData?.code == 403
-          ) {
-            // alert("d,jsahfjdasgfjh")
-            const res = await fetch("/api/digilocker", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                slug,
-                bookingId
-              }),
-            });
-    
-            const data = await res.json();
-            console.log("API Response:", data);
-    
-            if (data.accessToken) {
-              localStorage.setItem("accessToken", data.accessToken); // ✅ store in browser
-            }
-    
-            if (data.digiData?.data?.authorization_url) {
-              window.location.href = data.digiData.data.authorization_url; // redirect user
-            } else {
-              setLoadingRow(null);
-              console.error("No authorization URL found", data);
-              if (data.error) {
-                toast.error("Something went wrong !")
-              }
-            }
-          } else {
-            // alert()
-    
-            getAadhaarDetails(session_id).then(async (Details) => {
-              setLoadingRow(id);
-    
-              // Save object as JSON string
-              localStorage.setItem("kyc_Details", JSON.stringify(Details));
+    try {
+      // Get session data securely
+      const sessionData = await SessionManager.getSession();
+      const sensitiveData = await SessionManager.getSensitiveData();
+      
+      const session_id = sessionData?.sessionId || sensitiveData?.sessionId;
+      const access_token = sensitiveData?.accessToken;
+      
+      let statusData;
+      if (session_id && access_token) {
+        const statusRes = await fetch(
+          `/api/digilocker_status?session_id=${session_id}&access_token=${access_token}`
+        );
 
-              setKycDetails(Details);
-              // const bokking_id = localStorage.getItem("booking_id");
-              // router.push(`/properties/${slug}/bookingproperties/${id}`);
-            });
+        statusData = await statusRes.json();
+        console.log("Session Status:", statusData);
+      }
+
+      if (
+        statusData?.sessionExpired ||
+        !session_id ||
+        statusData?.code == 521 ||
+        statusData?.code == 403
+      ) {
+        // Create new digilocker session
+        const res = await fetch("/api/digilocker", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            slug,
+            bookingId: plotNo
+          }),
+        });
+
+        const data = await res.json();
+        console.log("API Response:", data);
+
+        if (data.accessToken) {
+          // Save to secure session instead of localStorage
+          await SessionManager.createSession({
+            bookingId: plotNo,
+            slug: slug,
+            accessToken: data.accessToken,
+            plotNo: plotNo,
+            currentStep: currentStep
+          });
+        }
+
+        if (data.digiData?.data?.authorization_url) {
+          window.location.href = data.digiData.data.authorization_url;
+        } else {
+          setLoadingRow(null);
+          console.error("No authorization URL found", data);
+          if (data.error) {
+            // toast.error("Something went wrong !")
           }
+        }
+      } else {
+        getAadhaarDetails(session_id).then(async (Details) => {
+          if (Details) {
+            setLoadingRow(plotNo);
+
+            // Save to secure session instead of localStorage
+            await SessionManager.updateSession({
+              kycDetails: Details,
+              sessionId: session_id
+            });
+
+            setKycDetails(Details);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error in handle_kyc:", error);
+    }
   }
 
 
@@ -313,6 +447,46 @@ export default function page() {
   //   const 
   // }, [])
   
+
+  // Don't render content until access is validated
+  if (!accessValidated && plotNo && slug) {
+    return (
+      <div className="flex justify-center items-center w-full h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
+        <span className="ml-3 text-sm">Validating access...</span>
+      </div>
+    );
+  }
+
+  // Show booked details UI if:
+  // 1. Property is booked (status === "booked" in inventoryItem) OR
+  // 2. Payment is completed (paymentStatus === "paid") AND booking exists
+  const isPropertyBooked = inventoryItem?.status?.toLowerCase() === "booked";
+  const paymentCompleted = reviewApplicationlist?.paymentStatus === "paid";
+  const hasBookingId = reviewApplicationlist?.bookingId;
+  
+  // Show booked UI if:
+  // - Property status is "booked" AND has booking ID, OR
+  // - Payment is completed AND has booking ID
+  const shouldShowBookedUI = 
+    inventoryItem && 
+    hasBookingId && 
+    (isPropertyBooked || paymentCompleted) &&
+    !reviewloading;
+
+  if (shouldShowBookedUI) {
+    return (
+      <div className="bg-gray-100 min-h-screen overflow-auto p-4 sm:p-8">
+        <BookedPropertyDetails
+          inventoryItem={inventoryItem}
+          reviewApplicationlist={reviewApplicationlist}
+          tableData={tableData}
+          slug={slug}
+          kycDetails={kycDetails}
+        />
+      </div>
+    );
+  }
 
   const renderContent = () => {
 
@@ -336,7 +510,7 @@ export default function page() {
                 handleNextStep={handleNextStep}
                 kycDetails={kycDetails}
                 tableData={tableData}
-                bookingId={bookingId}
+                plotNo={plotNo}
                 allKycDetails={reviewApplicationlist}
                 reviewApplication={reviewApplication}
               />
@@ -422,11 +596,30 @@ export default function page() {
         </>
       );
     } else if (currentStep === 4) {
+      // Check if payment is already completed or property is booked - show booked UI instead
+      if ((reviewApplicationlist?.paymentStatus === "paid" || isBooked) && hasBookingId && !reviewloading) {
+        // This will be caught by the shouldShowBookedUI check above
+        return null;
+      }
+      
+      // Check if payment is already completed - show loading while data refreshes
+      if (reviewApplicationlist?.paymentStatus === "paid" && reviewloading) {
+        return (
+          <div className="flex justify-center items-center w-full h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
+            <span className="ml-3 text-sm">Loading booking details...</span>
+          </div>
+        );
+      }
+      
       return (
         <>
-         <PaymentPlan handlePreviousStep={handlePreviousStep}/>
-
-     
+         <PaymentPlan 
+           handlePreviousStep={handlePreviousStep}
+           inventoryItem={inventoryItem}
+           reviewApplicationlist={reviewApplicationlist}
+           kycDetails={kycDetails}
+         />
         </>
       );
     }

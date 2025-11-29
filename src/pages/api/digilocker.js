@@ -58,7 +58,36 @@ export default async function handler(req, res) {
 
         const digiData = await digiResponse.json();
 
-        // Return to frontend
+        // Store accessToken in secure session if bookingId exists
+        if (bookingId && slug) {
+            try {
+                const { sessions } = require('../session/create');
+                const crypto = require('crypto');
+                const sessionToken = crypto.randomBytes(32).toString('hex');
+
+                const sessionData = {
+                    bookingId,
+                    slug,
+                    accessToken,
+                    plotNo: bookingId,
+                    currentStep: 2,
+                    createdAt: Date.now(),
+                    expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+                };
+
+                sessions.set(sessionToken, sessionData);
+
+                // Set secure httpOnly cookie
+                res.setHeader('Set-Cookie', [
+                    `booking_session=${sessionToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${86400}`
+                ]);
+            } catch (sessionError) {
+                console.error('Error creating session in digilocker:', sessionError);
+                // Continue even if session creation fails
+            }
+        }
+
+        // Return to frontend (accessToken still returned for backward compatibility during migration)
         res.status(200).json({
             digiData,
             accessToken,

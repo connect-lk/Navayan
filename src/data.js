@@ -259,8 +259,8 @@ export const applicantFields = [{
         type: "text",
         readOnly: "readOnly"
     },
-    { name: "applicantPan", placeholder: "PAN No. of Applicant", type: "text", readOnly: "readOnly" },
-    { name: "applicantDob", placeholder: "Date of Birth", type: "text", readOnly: "readOnly" },
+    { name: "applicantPan", placeholder: "PAN No. of Applicant", type: "text", },
+    { name: "applicantDob", placeholder: "Date of Birth", type: "date", readOnly: "readOnly" },
     {
         name: "applicantProfession",
         placeholder: "Profession of Applicant",

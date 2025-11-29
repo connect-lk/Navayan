@@ -12,7 +12,7 @@ const KYCForm = ({
   handleNextStep,
   tableData,
   kycDetails,
-  bookingId,
+  plotNo,
   allKycDetails,
   reviewApplication,
 }) => {
@@ -112,7 +112,7 @@ const KYCForm = ({
           body: JSON.stringify({
             bookingId: generateBookingId(),
             property_id: tableData[0]?.property_id,
-            plot_no: bookingId,
+            plot_no: plotNo,
             totalAmount: tableData[0]?.total,
             paymentStatus: "pending",
             photo: kycDetails?.photo,
@@ -124,12 +124,8 @@ const KYCForm = ({
       const data = await res.json();
       if (data?.success) {
         reviewApplication();
-<<<<<<< HEAD
         console.log("Booking & KYC saved:", data.data);
         handleNextStep(3);
-=======
-        console.log("Booking & KYC saved:", data?.data);
->>>>>>> 8dd3bac0d60ddb092da628cb6bd95d47343ea8c3
       } else {
         console.error("Failed:", data.message || data);
         toast.error(data.message)

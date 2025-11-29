@@ -6,6 +6,7 @@ import InventoryTable from "@/components/comman/InventoryTable";
 import { bookingData } from "@/data";
 import AllPages from "@/service/allPages";
 import { useRouter } from "next/router";
+import SessionManager from "@/utils/sessionManager";
 
 const index = () => {
   const [inventoryList, setInventoryList] = useState([]);
@@ -98,7 +99,14 @@ const index = () => {
   // hold count
 
   const getAadhaarDetails = async (session_id) => {
-    const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+    // Get access token from secure session instead of localStorage
+    const sensitiveData = await SessionManager.getSensitiveData();
+    const access_token = sensitiveData?.accessToken;
+    
+    if (!access_token) {
+      console.error("Access token not found in session");
+      return null;
+    }
 
     const res = await fetch(
       `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`

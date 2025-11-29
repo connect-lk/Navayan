@@ -6,6 +6,7 @@ import { GrNext } from "react-icons/gr";
 import { MdArrowBackIosNew } from "react-icons/md";
 import AllPages from "@/service/allPages";
 import { toast, ToastContainer } from "react-toastify";
+import SessionManager from "@/utils/sessionManager";
 
 const InventoryTable = memo(
   ({
@@ -56,7 +57,15 @@ const InventoryTable = memo(
     };
 
     const getAadhaarDetails = async (session_id) => {
-      const access_token = localStorage.getItem("accessToken"); // browser can access localStorage
+      // Get access token from secure session instead of localStorage
+      const sensitiveData = await SessionManager.getSensitiveData();
+      const access_token = sensitiveData?.accessToken;
+      
+      if (!access_token) {
+        console.error("Access token not found in session");
+        return null;
+      }
+      
       const res = await fetch(
         `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
       );
@@ -104,10 +113,20 @@ const InventoryTable = memo(
     const handleBookNow = useCallback(async (id) => {
           await holdFlatFun(id);
           setLoadingRow(id);
-          setTimeout(() => {
-            localStorage.setItem("booking_id", id);
-      
-            router.push(`/properties/${slug}/bookingproperties/${id}`);
+          setTimeout(async () => {
+            // Create secure session instead of using localStorage
+            try {
+              await SessionManager.createSession({
+                bookingId: id,
+                slug: slug,
+                plotNo: id,
+                currentStep: 2
+              });
+              router.push(`/properties/${slug}/bookingproperties/${id}`);
+            } catch (error) {
+              console.error("Error creating session:", error);
+              router.push(`/properties/${slug}/bookingproperties/${id}`);
+            }
           }, 1000);
       // const session_id = localStorage.getItem("session_id");
       // const access_token = localStorage.getItem("accessToken");
