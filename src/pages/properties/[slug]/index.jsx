@@ -61,6 +61,7 @@ const index = () => {
       id: item?.id,
       sn: index + 1,
       plotNo: item?.plot_no,
+      property_id: item?.property_id || project?.id, // Add property_id from item or fallback to project.id
       plotSize: `${item?.plot_size} sq.ft`,
       plotFacing: item?.facing,
       plcSide: item?.plc_side,
@@ -227,7 +228,9 @@ const index = () => {
             tableData={filteredData}
             holdFlatFun={holdFlatFun}
             InventoryListApiFun={InventoryListApiFun}
+            fetchProject={fetchProject}
             slug={slug}
+            loading={loading}
           />
         </>
       )}

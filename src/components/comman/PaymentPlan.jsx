@@ -53,13 +53,30 @@ const formatCurrency = (amount) =>
   }).format(amount);
 
 const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist, kycDetails }) => {
+
+
+
+
+ 
+
+
+
+
   const [selectedPlanId, setSelectedPlanId] = useState("plan-10");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showQuotation, setShowQuotation] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [quotationData, setQuotationData] = useState(null);
-  const navigation = useRouter()
-  console.log("reviewApplicationlist", reviewApplicationlist);
+  const navigation = useRouter();
+  
+  // Ensure reviewApplicationlist is always an object
+  const safeReviewApplicationlist = reviewApplicationlist || {};
+  
+  console.log("reviewApplicationlist--------paymentplan", safeReviewApplicationlist);
+  console.log("reviewApplicationlist type:", typeof safeReviewApplicationlist);
+  console.log("reviewApplicationlist keys:", Object.keys(safeReviewApplicationlist));
+  console.log("reviewApplicationlist.bookingId:", safeReviewApplicationlist?.bookingId);
+  
   // Calculate total amount from inventory item or use default
   // const totalAmount = inventoryItem?.with_plc || inventoryItem?.total || 100000;
   const totalAmount =  100000;
@@ -143,12 +160,12 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
         pan: "AASFN4950K",
       },
       customer: {
-        name: reviewApplicationlist?.applicantName || kycDetails?.name || "Customer",
-        contactNumber: reviewApplicationlist?.applicantPhone || reviewApplicationlist?.applicantAdditionalPhone || kycDetails?.contactNumber || "N/A",
-        email: reviewApplicationlist?.applicantEmail || "N/A",
-        address: reviewApplicationlist?.applicantAddress || "N/A",
-        aadhar: reviewApplicationlist?.applicantAadhar || "N/A",
-        pan: reviewApplicationlist?.applicantPan || kycDetails?.panNum || "N/A",
+        name: safeReviewApplicationlist?.applicantName || kycDetails?.name || "Customer",
+        contactNumber: safeReviewApplicationlist?.applicantPhone || safeReviewApplicationlist?.applicantAdditionalPhone || kycDetails?.contactNumber || "N/A",
+        email: safeReviewApplicationlist?.applicantEmail || "N/A",
+        address: safeReviewApplicationlist?.applicantAddress || "N/A",
+        aadhar: safeReviewApplicationlist?.applicantAadhar || "N/A",
+        pan: safeReviewApplicationlist?.applicantPan || kycDetails?.panNum || "N/A",
       },
       property: {
         name: inventoryItem?.property_name || "Property",
@@ -205,7 +222,7 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
       console.log("✅ PDF converted to base64, length:", pdfBase64.length);
 
       // Get bookingId for filename
-      const bookingIdToUse = reviewApplicationlist?.bookingId || "";
+      const bookingIdToUse = safeReviewApplicationlist?.bookingId || "";
       
       // Save PDF to server and get URL
       if (bookingIdToUse) {
@@ -235,8 +252,8 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
       }
 
       // Get customer email - try multiple sources
-      let customerEmail = reviewApplicationlist?.applicantEmail || 
-                         reviewApplicationlist?.applicant_email ||
+      let customerEmail = safeReviewApplicationlist?.applicantEmail || 
+                         safeReviewApplicationlist?.applicant_email ||
                          quotationData.customer?.email || 
                          "";
       
@@ -245,8 +262,8 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
         customerEmail = "";
       }
       
-      const customerName = reviewApplicationlist?.applicantName || 
-                          reviewApplicationlist?.applicant_name ||
+      const customerName = safeReviewApplicationlist?.applicantName || 
+                          safeReviewApplicationlist?.applicant_name ||
                           quotationData.customer?.name || 
                           "Customer";
       
@@ -256,7 +273,7 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
       if (!customerEmail || customerEmail.trim() === "" || !emailRegex.test(customerEmail.trim())) {
         console.warn("Customer email not found or invalid, skipping email send.", {
           email: customerEmail,
-          reviewApplicationlistEmail: reviewApplicationlist?.applicantEmail,
+          reviewApplicationlistEmail: safeReviewApplicationlist?.applicantEmail,
           quotationDataEmail: quotationData.customer?.email
         });
         return;
@@ -314,7 +331,7 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
       const propertyId = inventoryItem?.property_id ;
       const plotNo = inventoryItem?.plot_no;
       // Use bookingId from previous step
-      const bookingIdToUse = reviewApplicationlist?.bookingId || "";
+      const bookingIdToUse = safeReviewApplicationlist?.bookingId || "";
       const transactionId = paymentResponse?.razorpay_payment_id || paymentResponse?.paymentId || "";
 
       console.log("📤 Calling bookedStatusUpdate API with:", {
@@ -389,7 +406,7 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
         name: "Navayan Properties",
         description: "Check Payment Transaction",
         order_id: order.id,
-        handler: function (response) {
+        handler: async function (response) {
           // Store payment details
           setPaymentDetails({
             paymentId: response.razorpay_payment_id,
@@ -403,41 +420,79 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
           const quotation = buildQuotationData();
           setQuotationData(quotation);
           
-          // Send email with PDF in background and get PDF URL
-          console.log("🚀 Payment successful (Check), triggering email send...");
-          sendQuotationEmail(quotation, response).then(pdfUrl => {
-            // Update booked status after payment (success) with PDF URL
-            updateBookedStatusAfterPayment(response, "paid", pdfUrl).catch(err => {
-              console.error("❌ Update booked status failed:", err);
-            });
-          }).catch(err => {
-            console.error("❌ Email sending failed:", err);
-            // Still update booked status even if email fails
-            updateBookedStatusAfterPayment(response, "paid", null).catch(err => {
-              console.error("❌ Update booked status failed:", err);
-            });
-          });
-          
+          // Show loader while processing APIs
           Swal.fire({
-            icon: "success",
-            title: "Payment Successful!",
-            html: `
-              <p><strong>Payment ID:</strong> ${response.razorpay_payment_id}</p>
-              <p><strong>Order ID:</strong> ${response.razorpay_order_id}</p>
-            `,
-            confirmButtonColor: THEME_COLOR,
-            confirmButtonText: "View Booking Details"
-          }).then((result) => {
-            if (result.isConfirmed) {
-              // Reload page to show booked details UI
-              window.location.reload();
-            } else {
-              // Also reload after a short delay if user closes the modal
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
+            title: "Processing Payment...",
+            html: "Please wait while we process your payment and send confirmation.",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+              Swal.showLoading();
             }
           });
+          
+          try {
+            // Send email with PDF and get PDF URL
+            console.log("🚀 Payment successful (Check), triggering email send...");
+            const pdfUrl = await sendQuotationEmail(quotation, response);
+            
+            // Update booked status after payment (success) with PDF URL
+            console.log("🔄 Updating booked status...");
+            await updateBookedStatusAfterPayment(response, "paid", pdfUrl);
+            
+            // Close loader and show success alert
+            Swal.fire({
+              icon: "success",
+              title: "Payment Successful!",
+              html: `
+                <p><strong>Payment ID:</strong> ${response.razorpay_payment_id}</p>
+                <p><strong>Order ID:</strong> ${response.razorpay_order_id}</p>
+              `,
+              confirmButtonColor: THEME_COLOR,
+              confirmButtonText: "View Booking Details"
+            }).then((result) => {
+              if (result.isConfirmed) {
+                // Reload page to show booked details UI
+                window.location.reload();
+              } else {
+                // Also reload after a short delay if user closes the modal
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              }
+            });
+          } catch (err) {
+            console.error("❌ Error processing payment:", err);
+            // Still try to update booked status even if email fails
+            try {
+              await updateBookedStatusAfterPayment(response, "paid", null);
+            } catch (updateErr) {
+              console.error("❌ Update booked status failed:", updateErr);
+            }
+            
+            // Show success alert even if some operations failed (payment was successful)
+            Swal.fire({
+              icon: "success",
+              title: "Payment Successful!",
+              html: `
+                <p><strong>Payment ID:</strong> ${response.razorpay_payment_id}</p>
+                <p><strong>Order ID:</strong> ${response.razorpay_order_id}</p>
+                <p style="color: #ff9800; margin-top: 10px;">Note: Some operations may still be processing in the background.</p>
+              `,
+              confirmButtonColor: THEME_COLOR,
+              confirmButtonText: "View Booking Details"
+            }).then((result) => {
+              if (result.isConfirmed) {
+                window.location.reload();
+              } else {
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              }
+            });
+          }
+          
           console.log("Payment ID:", response.razorpay_payment_id);
           console.log("Order ID:", response.razorpay_order_id);
           console.log("Signature:", response.razorpay_signature);
@@ -540,7 +595,7 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
         name: "Navayan Properties",
         description: `Payment for ${selectedPlan?.name || "Booking"}`,
         order_id: order.id,
-        handler: function (response) {
+        handler: async function (response) {
           // Store payment details
           setPaymentDetails({
             paymentId: response.razorpay_payment_id,
@@ -554,43 +609,82 @@ const PaymentPlan = ({ handlePreviousStep, inventoryItem, reviewApplicationlist,
           const quotation = buildQuotationData();
           setQuotationData(quotation);
           
-          // Send email with PDF in background and get PDF URL
-          console.log("🚀 Payment successful (Online), triggering email send...");
-          sendQuotationEmail(quotation, response).then(pdfUrl => {
-            // Update booked status after payment (success) with PDF URL
-            updateBookedStatusAfterPayment(response, "paid", pdfUrl).catch(err => {
-              console.error("❌ Update booked status failed:", err);
-            });
-          }).catch(err => {
-            console.error("❌ Email sending failed:", err);
-            // Still update booked status even if email fails
-            updateBookedStatusAfterPayment(response, "paid", null).catch(err => {
-              console.error("❌ Update booked status failed:", err);
-            });
-          });
-          
+          // Show loader while processing APIs
           Swal.fire({
-            icon: "success",
-            title: "Payment Successful!",
-            html: `
-              <p><strong>Payment ID:</strong> ${response.razorpay_payment_id}</p>
-              <p><strong>Order ID:</strong> ${response.razorpay_order_id}</p>
-              <p><strong>Amount:</strong> ${formatCurrency(amountToPay)}</p>
-              <p style="margin-top: 10px; color: #066fa9;"><strong>✓ Quotation has been sent to your email</strong></p>
-            `,
-            confirmButtonColor: THEME_COLOR,
-            confirmButtonText: "View Booking Details"
-          }).then((result) => {
-            if (result.isConfirmed) {
-              // Reload page to show booked details UI
-              window.location.reload();
-            } else {
-              // Also reload after a short delay if user closes the modal
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
+            title: "Processing Payment...",
+            html: "Please wait while we process your payment and send confirmation.",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+              Swal.showLoading();
             }
           });
+          
+          try {
+            // Send email with PDF and get PDF URL
+            console.log("🚀 Payment successful (Online), triggering email send...");
+            const pdfUrl = await sendQuotationEmail(quotation, response);
+            
+            // Update booked status after payment (success) with PDF URL
+            console.log("🔄 Updating booked status...");
+            await updateBookedStatusAfterPayment(response, "paid", pdfUrl);
+            
+            // Close loader and show success alert
+            Swal.fire({
+              icon: "success",
+              title: "Payment Successful!",
+              html: `
+                <p><strong>Payment ID:</strong> ${response.razorpay_payment_id}</p>
+                <p><strong>Order ID:</strong> ${response.razorpay_order_id}</p>
+                <p><strong>Amount:</strong> ${formatCurrency(amountToPay)}</p>
+                <p style="margin-top: 10px; color: #066fa9;"><strong>✓ Quotation has been sent to your email</strong></p>
+              `,
+              confirmButtonColor: THEME_COLOR,
+              confirmButtonText: "View Booking Details"
+            }).then((result) => {
+              if (result.isConfirmed) {
+                // Reload page to show booked details UI
+                window.location.reload();
+              } else {
+                // Also reload after a short delay if user closes the modal
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              }
+            });
+          } catch (err) {
+            console.error("❌ Error processing payment:", err);
+            // Still try to update booked status even if email fails
+            try {
+              await updateBookedStatusAfterPayment(response, "paid", null);
+            } catch (updateErr) {
+              console.error("❌ Update booked status failed:", updateErr);
+            }
+            
+            // Show success alert even if some operations failed (payment was successful)
+            Swal.fire({
+              icon: "success",
+              title: "Payment Successful!",
+              html: `
+                <p><strong>Payment ID:</strong> ${response.razorpay_payment_id}</p>
+                <p><strong>Order ID:</strong> ${response.razorpay_order_id}</p>
+                <p><strong>Amount:</strong> ${formatCurrency(amountToPay)}</p>
+                <p style="color: #ff9800; margin-top: 10px;">Note: Some operations may still be processing in the background.</p>
+              `,
+              confirmButtonColor: THEME_COLOR,
+              confirmButtonText: "View Booking Details"
+            }).then((result) => {
+              if (result.isConfirmed) {
+                window.location.reload();
+              } else {
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              }
+            });
+          }
+          
           console.log("Payment ID:", response.razorpay_payment_id);
           console.log("Order ID:", response.razorpay_order_id);
           console.log("Signature:", response.razorpay_signature);

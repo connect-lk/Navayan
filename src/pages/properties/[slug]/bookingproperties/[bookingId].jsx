@@ -35,6 +35,10 @@ export default function page() {
   const [isBooked, setIsBooked] = useState(false);
   const paymentStatusCheckedRef = useRef(false);
 
+console.log("currentStep", reviewApplicationlist);
+
+
+
   const InventoryListApiFun = async () => {
     try {
       // setLoading(true);
@@ -63,9 +67,9 @@ export default function page() {
     const res = await fetch(
       `/api/digilocker_issued_doc?session_id=${session_id}&access_token=${access_token}`
     );
-    const digilocker_issued_docData = await res.json(); 
+    const digilocker_issued_docData = await res.json();
 
-    let panKyc ;
+    let panKyc;
     if (digilocker_issued_docData?.pan?.data?.files[0].url) {
       const responsess = await fetch("/api/xml_to_text", {
         method: "POST",
@@ -74,9 +78,9 @@ export default function page() {
           fileUrl: digilocker_issued_docData?.pan?.data?.files[0].url,
         }),
       });
-  
+
       const datass = await responsess.json();
-       panKyc = datass?.data?.Certificate?.CertificateData?.PAN;
+      panKyc = datass?.data?.Certificate?.CertificateData?.PAN;
     }
 
     let aadhaarKyc;
@@ -88,9 +92,9 @@ export default function page() {
           fileUrl: digilocker_issued_docData?.aadhaar?.data?.files[0].url,
         }),
       });
-  
-      const data = await response.json(); 
-       aadhaarKyc = data?.data?.Certificate?.CertificateData.KycRes;
+
+      const data = await response.json();
+      aadhaarKyc = data?.data?.Certificate?.CertificateData.KycRes;
     }
 
     const userInfo = {
@@ -103,7 +107,7 @@ export default function page() {
       photo: aadhaarKyc?.UidData?.Pht || "",
       panNum: panKyc?.$?.num || "",
     };
- 
+
     return userInfo;
   };
   // useEffect(() => {
@@ -130,27 +134,27 @@ export default function page() {
 
   const tableData = inventoryItem
     ? [
-        {
-          id: inventoryItem?.id,
-          plotNo: inventoryItem?.plot_no,
-          property_id: inventoryItem?.property_id,
-          plotSize: `${inventoryItem?.plot_size} sq.ft`,
-          plotFacing: inventoryItem?.facing,
-          plcSide: inventoryItem?.plc_side,
-          plcPercentage: `${inventoryItem?.plc_percentage}%`,
-          north: inventoryItem?.north,
-          south: inventoryItem?.south,
-          east: inventoryItem?.east,
-          west: inventoryItem?.west,
-          withPlc: `₹${inventoryItem?.with_plc}`,
-          additional: `₹${inventoryItem?.additional}`,
-          total: inventoryItem?.total,
-          status: inventoryItem?.status,
-          hold_expires_at: inventoryItem?.hold_expires_at,
-          created_at: inventoryItem?.created_at,
-          booked: inventoryItem?.status?.toLowerCase() !== "available",
-        },
-      ]
+      {
+        id: inventoryItem?.id,
+        plotNo: inventoryItem?.plot_no,
+        property_id: inventoryItem?.property_id,
+        plotSize: `${inventoryItem?.plot_size} sq.ft`,
+        plotFacing: inventoryItem?.facing,
+        plcSide: inventoryItem?.plc_side,
+        plcPercentage: `${inventoryItem?.plc_percentage}%`,
+        north: inventoryItem?.north,
+        south: inventoryItem?.south,
+        east: inventoryItem?.east,
+        west: inventoryItem?.west,
+        withPlc: `₹${inventoryItem?.with_plc}`,
+        additional: `₹${inventoryItem?.additional}`,
+        total: inventoryItem?.total,
+        status: inventoryItem?.status,
+        hold_expires_at: inventoryItem?.hold_expires_at,
+        created_at: inventoryItem?.created_at,
+        booked: inventoryItem?.status?.toLowerCase() !== "available",
+      },
+    ]
     : [];
   // Track if reviewApplication has been called to prevent infinite loops
   const reviewApplicationCalledRef = useRef(false);
@@ -159,12 +163,12 @@ export default function page() {
 
   const reviewApplication = useCallback(async (forceRefresh = false) => {
     const propertyId = tableData[0]?.property_id;
-    
+
     // Prevent duplicate calls unless forced
-    if (!forceRefresh && 
-        reviewApplicationCalledRef.current && 
-        lastPropertyIdRef.current === propertyId && 
-        lastPlotNoRef.current === plotNo) {
+    if (!forceRefresh &&
+      reviewApplicationCalledRef.current &&
+      lastPropertyIdRef.current === propertyId &&
+      lastPlotNoRef.current === plotNo) {
       return;
     }
 
@@ -177,11 +181,20 @@ export default function page() {
       reviewApplicationCalledRef.current = true;
       lastPropertyIdRef.current = propertyId;
       lastPlotNoRef.current = plotNo;
-      
+
       const response = await AllPages.reviewApplication(propertyId, plotNo);
-      const bookingData = response?.data[0];
-      setReviewApplicationList(bookingData);
+      console.log("reviewApplication API response:", response);
+      console.log("reviewApplication response.data:", response?.data);
+      console.log("reviewApplication response.data[0]:", response?.data?.[0]);
       
+      const bookingData = response?.data?.[0] || response?.data || null;
+      console.log("bookingData after processing:", bookingData);
+      console.log("bookingData keys:", bookingData ? Object.keys(bookingData) : "null/undefined");
+      
+      // Always set to an object, never undefined or null
+      setReviewApplicationList(bookingData || {});
+      console.log("reviewApplicationlist state set to:", bookingData || {});
+
       // If booking data exists, it means the property is booked
       if (bookingData && bookingData.bookingId) {
         setIsBooked(true);
@@ -194,6 +207,9 @@ export default function page() {
     }
   }, [plotNo, tableData?.[0]?.property_id]); // Only depend on property_id, not entire tableData
 
+
+
+
   const bookedStatusUpdateFun = async () => {
     try {
       await AllPages.bookedStatusUpdate(tableData[0]?.property_id, plotNo);
@@ -202,6 +218,11 @@ export default function page() {
       console.error("Error holding flat:", error.message);
     }
   };
+
+
+
+
+
 
   const propertyId = tableData[0]?.property_id;
 
@@ -236,11 +257,55 @@ export default function page() {
     }
   }, [plotNo, propertyId, reviewApplication]);
 
+  // Ensure reviewApplication is called when step 3 is reached and data is missing
+  useEffect(() => {
+    if (currentStep === 3 && plotNo && propertyId && !reviewloading) {
+      // Check if we have any meaningful data (not just empty object)
+      const hasData = reviewApplicationlist && 
+                     typeof reviewApplicationlist === 'object' && 
+                     Object.keys(reviewApplicationlist).length > 0;
+      
+      // If no data, fetch it
+      if (!hasData) {
+        console.log("Step 3 reached but no data found, fetching reviewApplication...");
+        // Reset the ref to allow fetching
+        reviewApplicationCalledRef.current = false;
+        lastPropertyIdRef.current = null;
+        lastPlotNoRef.current = null;
+        reviewApplication(true); // Force refresh
+      } else {
+        console.log("Step 3 reached with data:", reviewApplicationlist);
+      }
+    }
+  }, [currentStep, plotNo, propertyId, reviewApplication, reviewApplicationlist, reviewloading]);
+
+  // Ensure reviewApplication is called when step 4 is reached and data is missing
+  useEffect(() => {
+    if (currentStep === 4 && plotNo && propertyId && !reviewloading) {
+      // Check if we have any meaningful data (not just empty object)
+      const hasData = reviewApplicationlist && 
+                     typeof reviewApplicationlist === 'object' && 
+                     Object.keys(reviewApplicationlist).length > 0;
+      
+      // If no data, fetch it
+      if (!hasData) {
+        console.log("Step 4 reached but no data found, fetching reviewApplication...");
+        // Reset the ref to allow fetching
+        reviewApplicationCalledRef.current = false;
+        lastPropertyIdRef.current = null;
+        lastPlotNoRef.current = null;
+        reviewApplication(true); // Force refresh
+      } else {
+        console.log("Step 4 reached with data:", reviewApplicationlist);
+      }
+    }
+  }, [currentStep, plotNo, propertyId, reviewApplication, reviewApplicationlist, reviewloading]);
+
   // Check payment status and refresh if needed (only once after payment)
   useEffect(() => {
     if (
-      currentStep === 4 && 
-      reviewApplicationlist?.paymentStatus === "paid" && 
+      currentStep === 4 &&
+      reviewApplicationlist?.paymentStatus === "paid" &&
       !paymentStatusCheckedRef.current &&
       !reviewloading &&
       propertyId
@@ -284,7 +349,7 @@ export default function page() {
       try {
         // Validate booking access
         const isValid = await SessionManager.validateBooking(plotNo, slug);
-        
+
         if (!isValid && plotNo && slug) {
           // If access is invalid, redirect to property page
           router.push(`/properties/${slug}`);
@@ -322,36 +387,36 @@ export default function page() {
 
 
 
-    useEffect(() => {
-      if (session_id) {
-        setLoading(true);
-        getAadhaarDetails(session_id).then(async (Details) => {
-          if (Details) {
-            // Save to secure session instead of localStorage
-            await SessionManager.createSession({
-              bookingId: plotNo,
-              slug: slug,
-              kycDetails: Details,
-              sessionId: session_id,
-              plotNo: plotNo,
-              currentStep: 2
+  useEffect(() => {
+    if (session_id) {
+      setLoading(true);
+      getAadhaarDetails(session_id).then(async (Details) => {
+        if (Details) {
+          // Save to secure session instead of localStorage
+          await SessionManager.createSession({
+            bookingId: plotNo,
+            slug: slug,
+            kycDetails: Details,
+            sessionId: session_id,
+            plotNo: plotNo,
+            currentStep: 2
+          });
+
+          // Get sensitive data for session
+          const sensitiveData = await SessionManager.getSensitiveData();
+          if (sensitiveData?.accessToken) {
+            await SessionManager.updateSession({
+              accessToken: sensitiveData.accessToken
             });
-
-            // Get sensitive data for session
-            const sensitiveData = await SessionManager.getSensitiveData();
-            if (sensitiveData?.accessToken) {
-              await SessionManager.updateSession({
-                accessToken: sensitiveData.accessToken
-              });
-            }
-
-            setKycDetails(Details);
-            setLoading(false);
-            router.push(`/properties/${slug}/bookingproperties/${plotNo}`);
           }
-        });
-      }
-    }, [session_id, plotNo, slug, router]);
+
+          setKycDetails(Details);
+          setLoading(false);
+          router.push(`/properties/${slug}/bookingproperties/${plotNo}`);
+        }
+      });
+    }
+  }, [session_id, plotNo, slug, router]);
 
 
   const steps = [
@@ -362,15 +427,15 @@ export default function page() {
   ];
 
 
-  const handle_kyc = async() => {
+  const handle_kyc = async () => {
     try {
       // Get session data securely
       const sessionData = await SessionManager.getSession();
       const sensitiveData = await SessionManager.getSensitiveData();
-      
+
       const session_id = sessionData?.sessionId || sensitiveData?.sessionId;
       const access_token = sensitiveData?.accessToken;
-      
+
       let statusData;
       if (session_id && access_token) {
         const statusRes = await fetch(
@@ -446,7 +511,7 @@ export default function page() {
   // useEffect(() => {
   //   const 
   // }, [])
-  
+
 
   // Don't render content until access is validated
   if (!accessValidated && plotNo && slug) {
@@ -464,13 +529,13 @@ export default function page() {
   const isPropertyBooked = inventoryItem?.status?.toLowerCase() === "booked";
   const paymentCompleted = reviewApplicationlist?.paymentStatus === "paid";
   const hasBookingId = reviewApplicationlist?.bookingId;
-  
+
   // Show booked UI if:
   // - Property status is "booked" AND has booking ID, OR
   // - Payment is completed AND has booking ID
-  const shouldShowBookedUI = 
-    inventoryItem && 
-    hasBookingId && 
+  const shouldShowBookedUI =
+    inventoryItem &&
+    hasBookingId &&
     (isPropertyBooked || paymentCompleted) &&
     !reviewloading;
 
@@ -501,46 +566,64 @@ export default function page() {
             InventoryListApiFun={InventoryListApiFun}
           />
 
-          
+
           {
             !loading ? (
-              
-            kycDetails?.uid ? (
-              <KYCForm
-                handleNextStep={handleNextStep}
-                kycDetails={kycDetails}
-                tableData={tableData}
-                plotNo={plotNo}
-                allKycDetails={reviewApplicationlist}
-                reviewApplication={reviewApplication}
-              />
-            ):(
-              <div className="flex items-center justify-center  mt-6  w-full bg-gray-100">
-              <div className="bg-white py-24 rounded-lg shadow-md flex h-full justify-center w-full">
-                <button className="py-3.5 md:px-12 px-4 cursor-pointer  bg-[#066FA9] rounded-lg text-white text-sm font-medium font-['Inter'] leading-tight" onClick={handle_kyc}>
-                  Complete Your KYC
-                </button>
+
+              kycDetails?.uid ? (
+                <KYCForm
+                  handleNextStep={handleNextStep}
+                  kycDetails={kycDetails}
+                  tableData={tableData}
+                  plotNo={plotNo}
+                  allKycDetails={reviewApplicationlist}
+                  reviewApplication={reviewApplication}
+                />
+              ) : (
+                <div className="flex items-center justify-center  mt-6  w-full bg-gray-100">
+                  <div className="bg-white py-24 rounded-lg shadow-md flex h-full justify-center w-full">
+                    <button className="py-3.5 md:px-12 px-4 cursor-pointer  bg-[#066FA9] rounded-lg text-white text-sm font-medium font-['Inter'] leading-tight" onClick={handle_kyc}>
+                      Complete Your KYC
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="flex justify-center items-center w-full h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
+                <span className="ml-3 text-sm">Loading kyc...</span>
               </div>
-            </div>
             )
-          ) :(
-            <div className="flex justify-center items-center w-full h-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
-              <span className="ml-3 text-sm">Loading kyc...</span>
-            </div>
-          )
-          
-          
+
+
           }
         </div>
       );
     } else if (currentStep === 3) {
+      // Check if we have any data at all (not just empty object)
+      const hasData = reviewApplicationlist && 
+                     typeof reviewApplicationlist === 'object' && 
+                     Object.keys(reviewApplicationlist).length > 0;
+      
+      // Debug logs
+      console.log("Step 3 - reviewApplicationlist:", reviewApplicationlist);
+      console.log("Step 3 - hasData:", hasData);
+      console.log("Step 3 - reviewloading:", reviewloading);
+      console.log("Step 3 - reviewApplicationlist keys:", reviewApplicationlist ? Object.keys(reviewApplicationlist) : "null/undefined");
+      
+      // If no data and we're not loading, try to fetch it
+      if (!hasData && !reviewloading && plotNo && propertyId) {
+        console.log("Step 3: No data found, attempting to fetch reviewApplication...");
+        reviewApplicationCalledRef.current = false;
+        reviewApplication(true);
+      }
+
       return (
         <>
-          {reviewloading ? (
-            <div className="flex justify-center items-center w-full h-16">
+          {reviewloading || !hasData ? (
+            <div className="flex justify-center items-center w-full h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
-              <span className="ml-3 text-sm">Loading property...</span>
+              <span className="ml-3 text-sm">Loading booking details...</span>
             </div>
           ) : (
             <>
@@ -556,19 +639,19 @@ export default function page() {
                 />
                 <div className="w-full py-6 md:mt-10 mt-4">
                   <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
-                    Applicant’s Details
+                    Applicant's Details
                   </h1>
                 </div>
                 <ApplicantDetails
-                  reviewApplicationlist={reviewApplicationlist}
+                  reviewApplicationlist={reviewApplicationlist || {}}
                 />
                 <div className="w-full py-6 md:mt-10 mt-4">
                   <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 text-left md:text-left pl-1 md:pl-0">
-                    Co-Applicant’s Details
+                    Co-Applicant's Details
                   </h1>
                 </div>
                 <CoApplicantDetails
-                  reviewApplicationlist={reviewApplicationlist}
+                  reviewApplicationlist={reviewApplicationlist || {}}
                 />
                 <div className="flex justify-between gap-6 items-center md:py-12 py-0 md:pt-6 pt-0 md:pb-0 pb-6">
                   <button
@@ -597,11 +680,13 @@ export default function page() {
       );
     } else if (currentStep === 4) {
       // Check if payment is already completed or property is booked - show booked UI instead
-      if ((reviewApplicationlist?.paymentStatus === "paid" || isBooked) && hasBookingId && !reviewloading) {
-        // This will be caught by the shouldShowBookedUI check above
-        return null;
-      }
-      
+
+
+      // if ((reviewApplicationlist?.paymentStatus === "paid" || isBooked) && hasBookingId && !reviewloading) {
+      //   // This will be caught by the shouldShowBookedUI check above
+      //   return null;
+      // }
+
       // Check if payment is already completed - show loading while data refreshes
       if (reviewApplicationlist?.paymentStatus === "paid" && reviewloading) {
         return (
@@ -611,15 +696,46 @@ export default function page() {
           </div>
         );
       }
+
+      // Show loading if data is still being fetched
+      if (reviewloading) {
+        return (
+          <div className="flex justify-center items-center w-full h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
+            <span className="ml-3 text-sm">Loading booking details...</span>
+          </div>
+        );
+      }
+
+      // Check if we have any data at all (not just empty object)
+      const hasData = reviewApplicationlist && 
+                     typeof reviewApplicationlist === 'object' && 
+                     Object.keys(reviewApplicationlist).length > 0;
       
+      // If no data and we're not loading, try to fetch it one more time
+      if (!hasData && !reviewloading && plotNo && propertyId) {
+        console.log("No data found, attempting to fetch reviewApplication...");
+        reviewApplicationCalledRef.current = false;
+        reviewApplication(true);
+        return (
+          <div className="flex justify-center items-center w-full h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#066FA9]"></div>
+            <span className="ml-3 text-sm">Loading booking details...</span>
+          </div>
+        );
+      }
+
+      console.log("reviewApplicationlist before PaymentPlan:", reviewApplicationlist);
+      console.log("reviewApplicationlist keys:", Object.keys(reviewApplicationlist));
+
       return (
         <>
-         <PaymentPlan 
-           handlePreviousStep={handlePreviousStep}
-           inventoryItem={inventoryItem}
-           reviewApplicationlist={reviewApplicationlist}
-           kycDetails={kycDetails}
-         />
+          <PaymentPlan
+            handlePreviousStep={handlePreviousStep}
+            inventoryItem={inventoryItem}
+            reviewApplicationlist={reviewApplicationlist}
+            kycDetails={kycDetails}
+          />
         </>
       );
     }
@@ -634,16 +750,14 @@ export default function page() {
           {steps?.map((step) => (
             <div key={step?.id} className="flex-1 flex flex-col items-center">
               <div
-                className={`md:w-12 w-8 md:h-12 h-8 rounded-full flex items-center text-[12px] md:text-[16px] justify-center font-bold ${
-                  currentStep >= step?.id
-                    ? "border-2 border-[#066fa9] text-[#066fa9] "
-                    : "text-stone-900"
-                } transition-colors z-50 duration-300
+                className={`md:w-12 w-8 md:h-12 h-8 rounded-full flex items-center text-[12px] md:text-[16px] justify-center font-bold ${currentStep >= step?.id
+                  ? "border-2 border-[#066fa9] text-[#066fa9] "
+                  : "text-stone-900"
+                  } transition-colors z-50 duration-300
                   ${currentStep > step?.id ? "bg-[#066FA9]" : "bg-white "}
-                  ${
-                    currentStep === step?.id
-                      ? "bg-[#066FA9]"
-                      : " text-[#066fa9]"
+                  ${currentStep === step?.id
+                    ? "bg-[#066FA9]"
+                    : " text-[#066fa9]"
                   }
                 `}
               >
@@ -667,9 +781,8 @@ export default function page() {
               </div>
               {/* Step name */}
               <div
-                className={`mt-2 text-center lg:text-[16px] md:text-md text-[11px] font-medium transition-colors duration-300 ${
-                  currentStep >= step?.id ? "text-[#1C1C1C]" : "text-[#1C1C1C]"
-                }`}
+                className={`mt-2 text-center lg:text-[16px] md:text-md text-[11px] font-medium transition-colors duration-300 ${currentStep >= step?.id ? "text-[#1C1C1C]" : "text-[#1C1C1C]"
+                  }`}
               >
                 {step?.name}
               </div>

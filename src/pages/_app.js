@@ -20,7 +20,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <div>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
+    
       <Navbar />
       <ScrollToTop /> {" "}
       <main className="pt-[40px] bg-[#e9e9e9] min-h-[calc(100vh-40px)]">

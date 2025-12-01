@@ -12,7 +12,7 @@ const Home = () => {
     const availableProjectApiFun = async () => {
       try {
         setLoading(true);
-        const response = await AllPages.properties();
+        const response = await AllPages.properties(); 
         setProjects(response || []);
       } catch (error) {
         console.error("Error fetching projects:", error);

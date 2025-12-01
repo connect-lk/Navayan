@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HiCheckCircle, HiDocumentText, HiCalendar, HiEye, HiDownload, HiX } from "react-icons/hi";
 import InventoryTable from "./InventoryTable";
 import ApplicantDetails from "./ApplicantDetails";
@@ -7,15 +7,27 @@ import CoApplicantDetails from "./CoApplicantDetails";
 import QuotationReport from "./QuotationReport";
 import { useRouter } from "next/router";
 
-const BookedPropertyDetails = ({ 
-  inventoryItem, 
-  reviewApplicationlist, 
+const BookedPropertyDetails = ({
+  inventoryItem,
+  reviewApplicationlist,
   tableData,
   slug,
-  kycDetails 
+  kycDetails
 }) => {
   const router = useRouter();
   const [showQuotation, setShowQuotation] = useState(false);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showQuotation) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showQuotation]);
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-IN", {
@@ -43,27 +55,27 @@ const BookedPropertyDetails = ({
     const currentDate = new Date();
     const dateStr = currentDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const timeStr = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    
+
     // Generate quotation number
     const quotationNumber = `QT-${inventoryItem?.id || '00000'}${Date.now().toString().slice(-4)}`;
-    
+
     // Calculate costs
     const basicCost = Number(inventoryItem?.with_plc) || Number(inventoryItem?.total) || 0;
     const ibms = Number(inventoryItem?.additional) || 0;
     const edc = 59000;
     const clubMembership = 236000;
     const legalCharges = 10000;
-    
+
     const additionalCharges = {
       ibms: ibms,
       edc: edc,
       clubMembership: clubMembership,
       legalCharges: legalCharges,
     };
-    
+
     const subtotal = Number(basicCost) + Number(ibms) + Number(edc) + Number(clubMembership) + Number(legalCharges);
     const total = Number(subtotal);
-    
+
     // Build payment schedule (default 20% plan)
     const paymentSchedule = [
       {
@@ -82,9 +94,9 @@ const BookedPropertyDetails = ({
         amount: Number(ibms) + Number(edc) + Number(clubMembership) + Number(legalCharges),
       }
     ];
-    
+
     const totalScheduled = paymentSchedule.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-    
+
     return {
       quotationNumber,
       date: dateStr,
@@ -259,13 +271,13 @@ const BookedPropertyDetails = ({
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
         <button
           onClick={() => router.push(`/properties/${slug || router.query.slug}`)}
-          className="w-full sm:w-auto bg-[#066FA9] text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl flex items-center justify-center gap-2"
+          className="w-full sm:w-auto bg-[#066FA9] text-white font-semibold py-3 cursor-pointer px-8 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#055a87] hover:shadow-xl flex items-center justify-center gap-2"
         >
           View Other Properties
         </button>
         <button
           onClick={() => setShowQuotation(true)}
-          className="w-full sm:w-auto bg-white border-2 border-[#066FA9] text-[#066FA9] font-semibold py-3 px-8 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#066FA9] hover:text-white flex items-center justify-center gap-2"
+          className="w-full sm:w-auto bg-white border-2 border-[#066FA9] text-[#066FA9] cursor-pointer font-semibold py-3 px-8 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#066FA9] hover:text-white flex items-center justify-center gap-2"
         >
           <HiEye className="w-5 h-5" />
           View Quotation Report
@@ -273,7 +285,7 @@ const BookedPropertyDetails = ({
         {reviewApplicationlist?.pdf_quotation_url && (
           <button
             onClick={handleDownloadPDF}
-            className="w-full sm:w-auto bg-[#EF6136] text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#d4552d] hover:shadow-xl flex items-center justify-center gap-2"
+            className="w-full sm:w-auto bg-[#EF6136] text-white font-semibold py-3 px-8 cursor-pointer  rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:bg-[#d4552d] hover:shadow-xl flex items-center justify-center gap-2"
           >
             <HiDownload className="w-5 h-5" />
             Download PDF
@@ -283,19 +295,44 @@ const BookedPropertyDetails = ({
 
       {/* Quotation Report Modal */}
       {showQuotation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
-          <div className="relative min-h-screen py-8 px-4">
-            <div className="relative bg-white rounded-lg shadow-xl max-w-screen-2xl mx-auto">
-              {/* Close Button */}
+        <div
+          className="fixed inset-0 bg-gray-100 bg-opacity-60 z-[9999] flex items-center justify-center   p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowQuotation(false);
+            }
+          }}
+          style={{ overflow: 'hidden' }}
+        >
+          <div
+            className="relative bg-white rounded-lg shadow-lg w-full max-w-screen-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              height: '95vh',
+              maxHeight: '95vh'
+            }}
+          >
+            {/* Modal Header with Close Button */}
+            <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center rounded-t-lg shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-800">Quotation Report</h3>
               <button
                 onClick={() => setShowQuotation(false)}
-                className="absolute top-4 right-4 z-10 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-colors"
+                className="text-gray-500 hover:text-gray-700 transition-colors p-2 hover:bg-gray-100 rounded-full"
                 aria-label="Close"
               >
-                <HiX className="w-6 h-6 text-gray-600" />
+                <HiX className="w-6 h-6" />
               </button>
-              
-              {/* Quotation Report Content */}
+            </div>
+
+            {/* Scrollable Content Area - Only this scrolls */}
+            <div
+              className="overflow-y-auto overflow-x-hidden"
+              style={{
+                height: 'calc(95vh - 60px)',
+                flex: '1 1 auto',
+                minHeight: 0
+              }}
+            >
               <div className="p-4">
                 <QuotationReport quotationData={buildQuotationData()} />
               </div>

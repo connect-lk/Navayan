@@ -1,6 +1,6 @@
 import React from "react";
 
-const ApplicantDetails = ({ reviewApplicationlist }) => {
+const ApplicantDetails = ({ reviewApplicationlist }) => { 
 const applicantData = {
   "Full Name of Applicant"         : reviewApplicationlist?.applicantName ?? "Not Data",
   "C/o of"                         : reviewApplicationlist?.applicantCof?.replace(/^C\/O\s*/i, "") ?? "Not Data",

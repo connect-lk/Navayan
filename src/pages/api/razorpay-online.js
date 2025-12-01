@@ -92,11 +92,11 @@ export default async function handler(req, res) {
             message: error.message,
             statusCode: error.statusCode,
             error: error.error,
-            description: error.error ? .description || error.description
+            description: error.error?.description || error.description
         });
 
         // Handle specific error types
-        const errorDescription = error.error ? .description || error.description || "";
+        const errorDescription = error.error?.description || error.description || "";
 
         // Handle amount limit errors
         if (errorDescription.includes("Amount exceeds maximum") || errorDescription.includes("maximum amount")) {
@@ -109,7 +109,7 @@ export default async function handler(req, res) {
         }
 
         // Handle authentication errors
-        if (error.statusCode === 401 || (error.error ? .code === 'BAD_REQUEST_ERROR' && errorDescription.includes("Authentication"))) {
+        if (error.statusCode === 401 || (error.error?.code === 'BAD_REQUEST_ERROR' && errorDescription.includes("Authentication"))) {
             return res.status(401).json({
                 success: false,
                 error: "Authentication failed. Please verify your Razorpay credentials.",

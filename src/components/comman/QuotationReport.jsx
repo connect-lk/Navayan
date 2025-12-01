@@ -116,7 +116,7 @@ const QuotationReport = ({ quotationData: propQuotationData }) => {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="w-full py-4 px-2 sm:px-4 lg:px-6">
       {/* Download Button */}
       <div className="max-w-screen-lg mx-auto mb-4 flex justify-end">
         <button

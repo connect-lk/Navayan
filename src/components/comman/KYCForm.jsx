@@ -46,13 +46,47 @@ const KYCForm = ({
   ]
     .filter(Boolean)
     .join(", ");
+  // Format date to YYYY-MM-DD format
+  // Handles various input formats: YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, or Date object
+  const formatDateToYYYYMMDD = (dateString) => {
+    if (!dateString) return "";
+    
+    // If already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+    
+    // Try to parse DD-MM-YYYY or DD/MM/YYYY format (common in Aadhaar data)
+    const ddmmyyyyMatch = dateString.match(/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/);
+    if (ddmmyyyyMatch) {
+      const [, day, month, year] = ddmmyyyyMatch;
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Try to parse as Date object (handles ISO strings, timestamps, etc.)
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    } catch (e) {
+      console.error("Error parsing date:", e);
+    }
+    
+    // If all parsing fails, return original string
+    return dateString;
+  };
+
   // applicantAutoFillData
   const applicantAutoFillData = {
     applicantAadhar: kycDetails?.uid || allKycDetails?.applicantAadhar,
     applicantAdditionalPhone: allKycDetails?.applicantAdditionalPhone,
     applicantAddress: applicantAddress || allKycDetails?.applicantAddress,
     applicantCof: kycDetails?.addressEnglish?.co || allKycDetails?.applicantCof,
-    applicantDob: kycDetails?.dob || allKycDetails?.applicantDob,
+    applicantDob: formatDateToYYYYMMDD(kycDetails?.dob || allKycDetails?.applicantDob),
     applicantEmail: allKycDetails?.applicantEmail,
     applicantName: kycDetails?.name || allKycDetails?.applicantName,
     applicantPan: kycDetails?.panNum || allKycDetails?.applicantPan,
@@ -60,18 +94,19 @@ const KYCForm = ({
     applicantProfession: allKycDetails?.applicantProfession,
     applicantPhoto: kycDetails?.photo || allKycDetails?.applicantPhoto,
   };
-  // coApplicantAutoFillData
+  
+  // coApplicantAutoFillData 
   const coApplicantAutoFillData = {
     coApplicantAadhar: allKycDetails?.coApplicantAadhar,
     coApplicantAdditionalPhone: allKycDetails?.coApplicantAdditionalPhone,
     coApplicantAddress: allKycDetails?.coApplicantAddress,
-    coApplicantCof: allKycDetails?.coApplicantCof,
-    coApplicantDob: allKycDetails?.coApplicantDob,
+    coApplicantCof: allKycDetails?.coApplicantCof, 
+    coApplicantDob: formatDateToYYYYMMDD(allKycDetails?.coApplicantDob),
     coApplicantEmail: allKycDetails?.coApplicantEmail,
     coApplicantName: allKycDetails?.coApplicantName,
     coApplicantPan: allKycDetails?.coApplicantPan,
     coApplicantPhone: allKycDetails?.coApplicantPhone,
-    coApplicantProfession: allKycDetails?.coApplicantProfession,
+    coApplicantProfession: allKycDetails?.coApplicantProfession,  
   };
   const initialValues = {};
   // applicantFields fields
@@ -103,6 +138,14 @@ const KYCForm = ({
   // KYC handleSubmit form
   const handleSubmit = async (values) => {
     console.log("values", values);
+    
+    // Normalize date formats before submitting
+    const normalizedValues = {
+      ...values,
+      applicantDob: formatDateToYYYYMMDD(values.applicantDob),
+      coApplicantDob: formatDateToYYYYMMDD(values.coApplicantDob),
+    };
+    
     try {
       const res = await fetch(
         "https://book.neotericproperties.in/wp-json/wp/v2/book_flat",
@@ -116,15 +159,22 @@ const KYCForm = ({
             totalAmount: tableData[0]?.total,
             paymentStatus: "pending",
             photo: kycDetails?.photo,
-            ...values,
+            ...normalizedValues,
           }),
         }
       );
 
       const data = await res.json();
       if (data?.success) {
-        reviewApplication();
         console.log("Booking & KYC saved:", data.data);
+        // Wait for reviewApplication to complete before navigating
+        try {
+          await reviewApplication(true); // Force refresh to get latest data
+          console.log("Review application data loaded successfully");
+        } catch (error) {
+          console.error("Error loading review application:", error);
+          // Still navigate even if reviewApplication fails
+        }
         handleNextStep(3);
       } else {
         console.error("Failed:", data.message || data);
@@ -168,9 +218,8 @@ const KYCForm = ({
                           name={field?.name}
                           placeholder={field?.placeholder}
                           readOnly={field?.readOnly}
-                          className={`w-full px-4 ${
-                            field?.type === "textarea" ? "h-24" : "h-auto"
-                          }  py-3  focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300
+                          className={`w-full px-4 ${field?.type === "textarea" ? "h-24" : "h-auto"
+                            }  py-3  focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300
                            placeholder-[#6b7280]`}
                         />
                       ) : (
@@ -203,9 +252,8 @@ const KYCForm = ({
                           as="textarea"
                           name={field?.name}
                           placeholder={field?.placeholder}
-                          className={` ${
-                            field?.type === "textarea" ? "h-24" : "h-auto"
-                          }  py-3 px-4 w-full focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 placeholder-[#6b7280]`}
+                          className={` ${field?.type === "textarea" ? "h-24" : "h-auto"
+                            }  py-3 px-4 w-full focus:outline-none focus:ring-1 focus:ring-[#066FA9] bg-white rounded-lg  outline-1 outline-offset-[-1px] outline-gray-300 placeholder-[#6b7280]`}
                         />
                       ) : (
                         <Field
