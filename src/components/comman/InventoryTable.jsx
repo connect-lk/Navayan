@@ -248,7 +248,10 @@ const InventoryTable = memo(
     };
 
     const handleBookNow = useCallback(async (id) => {
-      await holdFlatFun(id);
+      // Find the property_id from tableData based on plotNo
+      const row = tableData?.find((item) => item?.plotNo === id);
+      const propertyId = row?.property_id;
+      await holdFlatFun(id, propertyId);
       setLoadingRow(id);
       setTimeout(async () => {
         // Create secure session instead of using localStorage
@@ -325,7 +328,7 @@ const InventoryTable = memo(
       //     router.push(`/properties/${slug}/bookingproperties/${id}`);
       //   });
       // }
-    });
+    }, [holdFlatFun, tableData, slug, router]);
 
     return (
       <div className="bg-white rounded-xl min-h-auto shadow-sm">

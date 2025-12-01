@@ -48,9 +48,15 @@ const index = () => {
     InventoryListApiFun();
   }, [project?.id]);
 
-  const holdFlatFun = async (id) => {
+  const holdFlatFun = async (id, property_id) => {
     try {
-      await AllPages.holdFlat(id);
+      // Use provided property_id or fallback to project.id
+      const propertyId = property_id || project?.id;
+      if (!propertyId) {
+        console.error("Property ID not found");
+        return;
+      }
+      await AllPages.holdFlat(propertyId, id);
       InventoryListApiFun();
     } catch (error) {
       console.error("Error holding flat:", error.message);

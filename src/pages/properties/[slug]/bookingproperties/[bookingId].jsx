@@ -42,7 +42,26 @@ console.log("currentStep", reviewApplicationlist);
   const InventoryListApiFun = async () => {
     try {
       // setLoading(true);
-      const response = await AllPages.inventoryList(41);
+      // Get property_id from inventoryItem if available, otherwise from tableData, or fetch from project
+      let propertyId = inventoryItem?.property_id || tableData[0]?.property_id;
+      
+      // If property_id is not available, fetch it from the project using slug
+      if (!propertyId && slug) {
+        try {
+          const allProjects = await AllPages.properties();
+          const matchedProject = allProjects.find((p) => p.slug === slug);
+          propertyId = matchedProject?.id;
+        } catch (error) {
+          console.error("Error fetching project:", error);
+        }
+      }
+      
+      if (!propertyId) {
+        console.error("Property ID not found");
+        return;
+      }
+      
+      const response = await AllPages.inventoryList(propertyId);
       const data = response?.data || [];
       const matchedItem = data.find((item) => item.id === plotNo);
       setInventoryItem(matchedItem);

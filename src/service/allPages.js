@@ -34,9 +34,9 @@ const AllPages = {
         }
     },
 
-    holdFlat: async(id) => {
+    holdFlat: async(property_id, plot_no) => {
         try {
-            const res = await requests.post(`/hold?property_id=41&plot_no=${id}`);
+            const res = await requests.post(`/hold?property_id=${property_id}&plot_no=${plot_no}`);
             if (res.status) {
                 console.log("Flat held successfully:", res.data);
             } else {

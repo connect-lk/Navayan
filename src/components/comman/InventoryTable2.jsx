@@ -155,7 +155,10 @@ const InventoryTable2 = memo(
             await SessionManager.updateSession({
               accessToken: data.accessToken
             });
-            await holdFlatFun(id);
+            // Find the property_id from tableData based on plotNo
+            const row = tableData?.find((item) => item?.plotNo === id);
+            const propertyId = row?.property_id;
+            await holdFlatFun(id, propertyId);
           }
 
           if (data.digiData?.data?.authorization_url) {
@@ -167,7 +170,10 @@ const InventoryTable2 = memo(
         } else {
           getAadhaarDetails(session_id).then(async (Details) => {
             if (Details) {
-              await holdFlatFun(id);
+              // Find the property_id from tableData based on plotNo
+              const row = tableData?.find((item) => item?.plotNo === id);
+              const propertyId = row?.property_id;
+              await holdFlatFun(id, propertyId);
               setLoadingRow(id);
 
               // Save to secure session instead of localStorage
@@ -184,7 +190,7 @@ const InventoryTable2 = memo(
         console.error("Error in handleBookNow:", error);
         setLoadingRow(null);
       }
-    });
+    }, [holdFlatFun, tableData, slug, router]);
 
     // const handleBookNow = useCallback(
     //   async (id) => {
