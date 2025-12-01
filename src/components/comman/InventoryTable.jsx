@@ -39,7 +39,6 @@ const InventoryTable = memo(
       try {
         console.log(`⏰ Hold expired! Calling update_property_status API for property_id: ${propertyId}, plot_no: ${plotNo}`);
         const response = await AllPages.holdStatusUpdate(propertyId, plotNo);
-        console.log("✅ holdStatusUpdate API response:", response);
 
         // Check for success in different response formats
         const isSuccess = response?.success ||
